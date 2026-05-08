@@ -1,0 +1,34 @@
+.gradle
+.kotlin/
+build/
+
+### Artifacts ###
+*.jar
+*.war
+*.ear
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### OS ###
+.DS_Store
+
+### Logs ###
+*.log
+
+### Local Environment ###
+.env
+http-client.private.env.json
+.idea/httpRequests/
+
+### Test Databases ###
+pgdata/
+
+### Gradle Wrapper ###
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
