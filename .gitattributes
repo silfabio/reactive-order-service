@@ -1,0 +1,15 @@
+# Handle line endings automatically for files detected as text
+# and perform LF normalization (recommended for cross-platform projects)
+* text=auto
+
+# Standardize line endings for specific file types
+*.kt text
+*.kts text
+*.java text
+*.xml text
+*.yml text
+*.sql text
+
+# Ensure shell scripts always use LF (Unix line endings)
+gradlew text eol=lf
+*.sh text eol=lf

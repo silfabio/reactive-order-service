@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: reactive-order-service
+
+  # R2DBC configuration for reactive database access
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/orders_db
+    username: user
+    REDACTED: REDACTED
+
+  # Flyway configuration for database migrations (uses JDBC)
+  flyway:
+    url: jdbc:postgresql://localhost:5432/orders_db
+    user: user
+    REDACTED: REDACTED
+    enabled: true
+
+  # Kafka configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # This tells the JSON deserializer which class to convert the JSON into.
+        spring.json.value.default.type: com.fabio.orderservice.domain.Order
+        # Trust all packages for deserialization. Use with caution in production.
+        spring.json.trusted.packages: "*"
+
+  # Spring Cloud Stream binding configuration
+  cloud:
+    stream:
+      bindings:
+        # Maps the consumer function 'processOrder' to the 'order-events' topic
+        processOrder-in-0:
+          destination: order-events
+        # Maps the producer (StreamBridge) to the 'order-events' topic
+        publishOrder-out-0:
+          destination: order-events
+
+# Actuator configuration for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

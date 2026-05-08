@@ -1,0 +1,32 @@
+### Variables
+@host = localhost
+@port = 8080
+@baseUrl = http://{{host}}:{{port}}
+
+### Create a new Order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "itemName": "ROG Ally X",
+  "amount": 1
+}
+
+> {%
+    client.test("Order created successfully", function() {
+        client.assert(response.status === 201 || response.status === 200, "Status should be 200 or 201");
+        client.assert(response.body.hasOwnProperty("id"), "Response should contain an order ID");
+    });
+    client.global.set("order_id", response.body.id);
+%}
+
+### Get the processed Order (Verify the 2-second delay)
+GET {{baseUrl}}/orders/{{order_id}}
+Accept: application/json
+
+> {%
+    client.test("Order retrieved successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}

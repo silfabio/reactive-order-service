@@ -1,0 +1,44 @@
+# Configuration for the 'test' profile, activated during JUnit/Kotest runs.
+
+# Use a random available port to prevent port conflicts on CI servers.
+server:
+  port: 0
+
+spring:
+  flyway:
+    enabled: true
+
+  # Disable Spring Boot's Docker Compose integration during tests.
+  # This is crucial to ensure tests use the embedded services below and do not
+  # depend on the docker-compose.yml file.
+  docker:
+    compose:
+      enabled: false
+
+  # Use the Spring Cloud Stream Test Binder for Kafka.
+  # This replaces the real Kafka broker with an in-memory message queue,
+  # making tests faster, more reliable, and independent of Docker.
+  cloud:
+    stream:
+      # Explicitly tell the test binder which bindings to create.
+      # You may need to adjust these names to match your function definitions
+      # in your StreamBridge or @Bean configurations.
+      bindings:
+        processOrder-in-0:
+          destination: order-events
+        publishOrder-out-0:
+          destination: order-events
+
+# Set logging levels specifically for tests.
+logging:
+  level:
+    root: INFO
+    com.fabio.orderservice: DEBUG
+    io.r2dbc.proxy.support: DEBUG
+
+# Disable actuator endpoints during tests.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
