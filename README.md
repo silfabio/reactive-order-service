@@ -47,7 +47,7 @@ Start the Spring Boot service:
 | Stop and remove containers | `docker compose down` |
 | Full Reset (Clean volumes) | `docker compose down -v --remove-orphans` |
 | View Infrastructure Logs | `docker compose logs -f` |
-| View specific service logs | `docker compose logs -f my-kafka` |
+| View specific service logs | `docker compose logs -f kafka` |
 
 ### Application Development
 | Action | Command |
@@ -55,7 +55,6 @@ Start the Spring Boot service:
 | Run Unit & Integration Tests | `./gradlew test` |
 | Build Executable JAR | `./gradlew build` |
 | Clean Build Assets | `./gradlew clean` |
-| Check Dependency Updates | `./gradlew dependencyUpdates` |
 
 ### Troubleshooting
 If the application fails to connect to Kafka or Postgres on first boot:
@@ -68,9 +67,11 @@ If the application fails to connect to Kafka or Postgres on first boot:
 Once the infrastructure is up and the application is running, you can access these local services:
 
 - **Spring Boot Application:** http://localhost:8080
+- **Swagger UI (API Docs):** http://localhost:8080/swagger-ui.html
+- **OpenAPI Spec (JSON):** http://localhost:8080/v3/api-docs
 - **Spring Boot Actuator:** http://localhost:8080/actuator
 - **Prometheus:** http://localhost:9090
-- **Prometheus Targets:** http://localhost:9090/targets (Verify scraping status)
+- **Prometheus Targets:** http://localhost:9090/targets
 - **Grafana:** http://localhost:3000 (Default login: `REDACTED`/`REDACTED`)
 - **Zipkin Tracing:** http://localhost:9411
 - **PostgreSQL:** `localhost:5432` (User: `user`, Password: `REDACTED`, DB: `orders_db`)
