@@ -25,9 +25,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        # This tells the JSON deserializer which class to convert the JSON into.
         spring.json.value.default.type: com.fabio.orderservice.domain.Order
-        # Trust all packages for deserialization. Use with caution in production.
         spring.json.trusted.packages: "*"
 
   # Spring Cloud Stream binding configuration
