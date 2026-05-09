@@ -3,19 +3,24 @@ package com.fabio.orderservice.controller
 import com.fabio.orderservice.domain.Order
 import com.fabio.orderservice.domain.OrderStatus
 import com.fabio.orderservice.dto.CreateOrderRequest
+import com.fabio.orderservice.exception.GlobalExceptionHandler
 import com.fabio.orderservice.service.OrderService
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 @WebFluxTest(OrderController::class)
+@Import(GlobalExceptionHandler::class) // Import the custom exception handler into the test context
 class OrderControllerTest(
     private val webTestClient: WebTestClient,
     @MockkBean private val orderService: OrderService
@@ -50,7 +55,7 @@ class OrderControllerTest(
             }
     }
 
-    test("POST /orders should return 400 for invalid request") {
+    test("POST /orders should return 400 with detailed error messages for invalid request") {
         val invalidRequest = CreateOrderRequest(itemName = "", amount = 0) // Invalid: blank name, amount <= 0
 
         webTestClient.post().uri("/orders")
@@ -58,9 +63,13 @@ class OrderControllerTest(
             .bodyValue(invalidRequest)
             .exchange()
             .expectStatus().isBadRequest // Expecting 400 Bad Request due to @Valid
-            .expectBody()
-            .jsonPath("$.status").isEqualTo(HttpStatus.BAD_REQUEST.value())
-            .jsonPath("$.error").isEqualTo("Bad Request")
+            .expectBody<Map<String, Any>>()
+            .value { response ->
+                response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
+                val errors = response["errors"] as List<String>
+                errors shouldContain "Item name must not be blank"
+                errors shouldContain "Amount must be at least 1"
+            }
     }
 
     test("GET /orders/{id} should return an order if found") {
