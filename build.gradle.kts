@@ -45,6 +45,9 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-stream")
     implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
 
+    // API Documentation
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.5.0")
+
     // Observability
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus") // For Prometheus metrics
