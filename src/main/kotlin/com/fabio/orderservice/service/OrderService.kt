@@ -17,10 +17,10 @@ class OrderService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun createOrder(order: Order): Mono<Order> {
+        // The 'order' object passed in has status=PENDING by default, so isNew() will be true.
         val orderWithId = order.copy(_id = UUID.randomUUID())
 
         return orderRepository.save(orderWithId)
-            .map { it.saved() }
             .doOnNext { savedOrder ->
                 logger.info("Publishing event for created order: {}", savedOrder.id)
                 // Send the saved order (with its ID) to the message broker.
