@@ -83,6 +83,8 @@ This project serves as a strong foundation. The following features are planned f
 -   **📖 API Documentation:** Integrate `SpringDoc OpenAPI` to automatically generate and host interactive API documentation (Swagger UI).
 -   **📊 Custom Metrics:** Enhance observability by adding custom business metrics with Micrometer (e.g., `orders.created.count`, `orders.processing.time`).
 -   **💪 Resilience:** Implement fault tolerance patterns using `Resilience4j` (e.g., `CircuitBreaker` for downstream service calls, `Retry` for transient failures).
--   **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure (e.g., on AWS) using `Terraform` and test it locally with `LocalStack`.
+-   **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure using `Terraform` and emulate it locally without AWS costs using `Floci`.
 -   **🔒 Secret Management:** Externalize secrets (database REDACTEDs, API keys) from configuration files into `HashiCorp Vault`.
 -   **🚀 CI/CD Pipeline:** Automate testing, building, and deployment using `GitHub Actions`.
+-   **✍️ Log Aggregation (Loki):** Unify logs and metrics for context-rich debugging within our "Single Pane of Glass."
+-   **📐 Diagrams as Code:** Document architecture using `Mermaid.js` to create version-controlled, maintainable diagrams that live with the code.
