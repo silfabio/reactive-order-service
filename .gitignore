@@ -32,3 +32,6 @@ pgdata/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 !gradlew
+
+### Node.js ###
+docs/architecture/node_modules/
