@@ -11,12 +11,24 @@ A high-performance, non-blocking order management microservice built with Kotlin
 - **Database Migration:** Flyway
 - **Build Tool:** Gradle (Kotlin DSL)
 - **Testing:** JUnit 5, MockK, Kotest
+- **Diagramming:** Mermaid.js
+
+## 🏛️ Architecture
+
+The architecture is designed to be cloud-native, with a clear separation between the local development environment and the production goal. The diagram below illustrates the current state, the local observability stack, and the future production environment on AWS.
+
+<div align="center">
+
+![Architecture Diagram](docs/architecture/architecture.svg)
+
+</div>
 
 ## 🛠 Architecture Highlights
 
 - **Reactive Pipeline:** End-to-end non-blocking flow from the API layer to the database.
 - **Event-Driven:** Asynchronous order processing and status updates via Kafka.
 - **Scalability:** Designed to handle high-concurrency workloads with minimal thread blocking.
+- **Diagrams as Code:** The architecture diagram is maintained as code using Mermaid.js, ensuring it stays in sync with the project's evolution.
 
 ## 💎 Quality Standards
 
@@ -29,12 +41,31 @@ A high-performance, non-blocking order management microservice built with Kotlin
 ### 1. Prerequisites
 - **Java 21** (Required for the JVM Toolchain)
 - **Docker & Docker Compose**
+- **Node.js & npm** (For rendering the architecture diagram)
 
 ### 2. Start Infrastructure
 Spin up PostgreSQL, Kafka, Prometheus, Zipkin, and Grafana:
 
+```sh
+docker compose up -d
+```
+
 ### 3. Run the Application
-Start the Spring Boot service:
+Start the Spring Boot service from your IDE.
+
+## ✍️ Diagrams as Code
+
+This project uses Mermaid.js to maintain the architecture diagram as code. This ensures the documentation is version-controlled and easy to update.
+
+For detailed instructions on setup and rendering, see the [**Architecture README**](docs/architecture/README.md).
+
+### Quick Render Command
+To update the diagram after making changes to the source file (`docs/architecture/architecture.mmd`), navigate to the architecture directory and run the rendering script:
+
+```sh
+cd docs/architecture
+npm run render
+```
 
 ## ⌨️ Useful Commands Cheat Sheet
 
@@ -75,16 +106,3 @@ Once the infrastructure is up and the application is running, you can access the
 - **Grafana:** http://localhost:3000 (Default login: `REDACTED`/`REDACTED`)
 - **Zipkin Tracing:** http://localhost:9411
 - **PostgreSQL:** `localhost:5432` (User: `user`, Password: `REDACTED`, DB: `orders_db`)
-
-## 🗺️ Roadmap & Future Enhancements
-
-This project serves as a strong foundation. The following features are planned for future iterations to evolve it into a fully production-grade microservice:
-
--   **📖 API Documentation:** Integrate `SpringDoc OpenAPI` to automatically generate and host interactive API documentation (Swagger UI).
--   **📊 Custom Metrics:** Enhance observability by adding custom business metrics with Micrometer (e.g., `orders.created.count`, `orders.processing.time`).
--   **💪 Resilience:** Implement fault tolerance patterns using `Resilience4j` (e.g., `CircuitBreaker` for downstream service calls, `Retry` for transient failures).
--   **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure using `Terraform` and emulate it locally without AWS costs using `Floci`.
--   **🔒 Secret Management:** Externalize secrets (database REDACTEDs, API keys) from configuration files into `HashiCorp Vault`.
--   **🚀 CI/CD Pipeline:** Automate testing, building, and deployment using `GitHub Actions`.
--   **✍️ Log Aggregation (Loki):** Unify logs and metrics for context-rich debugging within our "Single Pane of Glass."
--   **📐 Diagrams as Code:** Document architecture using `Mermaid.js` to create version-controlled, maintainable diagrams that live with the code.
