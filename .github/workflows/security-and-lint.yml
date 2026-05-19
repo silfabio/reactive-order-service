@@ -1,0 +1,46 @@
+name: Security and Linting
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Super-Linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          # Full git history is needed to get a proper list of changed files
+          fetch-depth: 0
+
+      - name: Lint Code Base
+        uses: github/super-linter@v5
+        with:
+          # Exclude the generated SVG from linting
+          filter_regex_exclude: .*docs/architecture/architecture.svg
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          # Full git history is needed for the scan
+          fetch-depth: 0
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          # Scan the entire history
+          path: ./
+          base: ${{ github.event.before }}
+          head: HEAD
+          extra_args: --only-verified
