@@ -5,14 +5,14 @@ spring:
   # R2DBC configuration for reactive database access
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/orders_db
-    username: user
-    REDACTED: REDACTED
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
 
   # Flyway configuration for database migrations (uses JDBC)
   flyway:
     url: jdbc:postgresql://localhost:5432/orders_db
-    user: user
-    REDACTED: REDACTED
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
     enabled: true
 
   # Kafka configuration
