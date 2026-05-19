@@ -1,0 +1,13 @@
+# Test-specific properties
+# This file overrides the main application.yml during the test phase.
+
+spring:
+  # R2DBC configuration for tests
+  r2dbc:
+    username: user
+    password: password
+
+  # Flyway configuration for tests
+  flyway:
+    user: user
+    password: password

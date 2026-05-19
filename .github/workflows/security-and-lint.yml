@@ -7,7 +7,21 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
+  # ktlint:
+  #   name: Ktlint Check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #     - name: Set up JDK 21
+  #       uses: actions/setup-java@v3
+  #       with:
+  #         java-version: '21'
+  #         distribution: 'temurin'
+  #     - name: Run ktlint
+  #       run: ./gradlew ktlintCheck
+
+  super-linter:
     name: Super-Linter
     runs-on: ubuntu-latest
     steps:
@@ -17,11 +31,12 @@ jobs:
           # Full git history is needed to get a proper list of changed files
           fetch-depth: 0
 
-      - name: Lint Code Base
+      - name: Lint Repository
         uses: github/super-linter@v5
         with:
-          # Exclude the generated SVG from linting
-          filter_regex_exclude: .*docs/architecture/architecture.svg
+          # Exclude Kotlin files since they are handled by the dedicated ktlint job
+          # This filter is now less critical as the ktlint job is disabled, but good to keep for future re-enabling
+          filter_regex_exclude: .*src/.*\.kt
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main

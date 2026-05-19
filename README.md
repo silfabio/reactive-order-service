@@ -53,7 +53,40 @@ docker compose up -d
 ### 3. Run the Application
 Start the Spring Boot service from your IDE.
 
-## ✍️ Diagrams as Code
+## 🎣 Pre-Commit Hooks
+
+This project uses `pre-commit` hooks to automatically run linters and formatters before each commit. This helps maintain code quality and consistency across the team.
+
+### Setup
+1. **Install `pre-commit`:**
+    If you don't have `pre-commit` installed globally, you can install it via Poetry:
+    ```sh
+    poetry add pre-commit --group dev
+    ```
+2. **Install the Git hooks:**
+    From the project root, run:
+    ```sh
+    poetry run pre-commit install
+    ```
+    This command sets up the Git hooks in your local repository.
+
+### Usage
+Once installed, `pre-commit` will automatically run checks before each `git commit`. If any checks fail, the commit will be aborted, and you'll see the errors in your terminal. Fix the reported issues and try committing again.
+
+## ✍️ Code Style & Linting
+
+This project uses **Ktlint** to enforce consistent Kotlin code style.
+
+### IDE Integration (Recommended)
+For the best developer experience, it is highly recommended to install the official **Ktlint plugin** in IntelliJ IDEA. This will provide real-time feedback and auto-formatting capabilities directly in the editor.
+
+### Command-Line Usage
+You can also use the following Gradle tasks to manage code style from the command line:
+
+- **Check for violations:** `./gradlew ktlintCheck`
+- **Autoformat Code:** `./gradlew ktlintFormat`
+
+## 📈 Diagrams as Code
 
 This project uses Mermaid.js to maintain the architecture diagram as code. This ensures the documentation is version-controlled and easy to update.
 
@@ -84,6 +117,8 @@ npm run render
 | Action | Command |
 | :--- | :--- |
 | Run Unit & Integration Tests | `./gradlew test` |
+| Check for Code Style Violations | `./gradlew ktlintCheck` |
+| Autoformat Code | `./gradlew ktlintFormat` |
 | Build Executable JAR | `./gradlew build` |
 | Clean Build Assets | `./gradlew clean` |
 
@@ -97,12 +132,12 @@ If the application fails to connect to Kafka or Postgres on first boot:
 
 Once the infrastructure is up and the application is running, you can access these local services:
 
-- **Spring Boot Application:** http://localhost:8080
-- **Swagger UI (API Docs):** http://localhost:8080/swagger-ui.html
-- **OpenAPI Spec (JSON):** http://localhost:8080/v3/api-docs
-- **Spring Boot Actuator:** http://localhost:8080/actuator
-- **Prometheus:** http://localhost:9090
-- **Prometheus Targets:** http://localhost:9090/targets
-- **Grafana:** http://localhost:3000 (Default login: `REDACTED`/`REDACTED`)
-- **Zipkin Tracing:** http://localhost:9411
-- **PostgreSQL:** `localhost:5432` (User: `user`, Password: `REDACTED`, DB: `orders_db`)
+- **Spring Boot Application:** <http://localhost:8080>
+- **Swagger UI (API Docs):** <http://localhost:8080/swagger-ui.html>
+- **OpenAPI Spec (JSON):** <http://localhost:8080/v3/api-docs>
+- **Spring Boot Actuator:** <http://localhost:8080/actuator>
+- **Prometheus:** <http://localhost:9090>
+- **Prometheus Targets:** <http://localhost:9090/targets>
+- **Grafana:** <http://localhost:3000> (Login details are in `.env.example`)
+- **Zipkin Tracing:** <http://localhost:9411>
+- **PostgreSQL:** `localhost:5432` (Login details are in `.env.example`, DB: `orders_db`)

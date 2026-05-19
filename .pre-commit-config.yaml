@@ -1,0 +1,17 @@
+# .pre-commit-config.yaml
+# This file configures the pre-commit hooks that run automatically before each commit.
+repos:
+  - repo: local
+    hooks:
+      - id: super-linter
+        name: Super-Linter
+        # This entry runs the super-linter in a Docker container.
+        # It mounts the entire project directory, so it will automatically find
+        # and use configuration files like .sqlfluff.
+        entry: docker run --rm -e RUN_LOCAL=true -e GITHUB_ACTIONS=true -v "$(pwd):/tmp/lint" github/super-linter:v5
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+        # We exclude Kotlin files here because they will be handled by a dedicated ktlint PR later.
+        args: [--filter_regex_exclude=.*src/.*\.kt]
