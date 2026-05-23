@@ -34,8 +34,9 @@ jobs:
       - name: Lint Repository
         uses: github/super-linter@v5
         env:
-          # Explicitly disable the Kotlin linter to avoid conflicts with the dedicated 'ktlint' job
+          # Explicitly disable all Kotlin linters to avoid conflicts with the dedicated 'ktlint' job
           VALIDATE_KOTLIN: false
+          VALIDATE_KOTLIN_ANDROID: false
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
