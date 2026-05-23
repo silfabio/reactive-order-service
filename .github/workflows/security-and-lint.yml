@@ -2,7 +2,9 @@ name: Security and Linting
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - chore/prepare-for-public-release # Run CI on push to this branch
   pull_request:
     branches: [ main ]
 
