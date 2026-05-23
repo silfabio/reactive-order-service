@@ -11,7 +11,6 @@ import org.springframework.web.bind.support.WebExchangeBindException
  */
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
     /**
      * Handles validation exceptions (`@Valid` failures).
      *
@@ -20,15 +19,17 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(WebExchangeBindException::class)
     fun handleValidationExceptions(ex: WebExchangeBindException): ResponseEntity<Map<String, Any>> {
-        val errors = ex.bindingResult.allErrors.map { error ->
-            error.defaultMessage ?: "Invalid value"
-        }
+        val errors =
+            ex.bindingResult.allErrors.map { error ->
+                error.defaultMessage ?: "Invalid value"
+            }
 
-        val errorBody = mapOf(
-            "status" to HttpStatus.BAD_REQUEST.value(),
-            "error" to "Bad Request",
-            "errors" to errors
-        )
+        val errorBody =
+            mapOf(
+                "status" to HttpStatus.BAD_REQUEST.value(),
+                "error" to "Bad Request",
+                "errors" to errors,
+            )
 
         return ResponseEntity.badRequest().body(errorBody)
     }

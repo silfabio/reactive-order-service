@@ -23,5 +23,5 @@ enum class OrderStatus {
      * The order could not be processed due to an error. This is a terminal state.
      * This status will be used in future error-handling scenarios (e.g., with Resilience4j).
      */
-    FAILED
+    FAILED,
 }

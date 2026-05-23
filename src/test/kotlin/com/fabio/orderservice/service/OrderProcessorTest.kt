@@ -33,19 +33,20 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.annotation.Import
 import org.springframework.messaging.support.MessageBuilder
 import reactor.core.publisher.Mono
-import java.util.*
+import java.util.UUID
 
 // Define the necessary bindings directly in the test properties.
 // This makes the test self-contained and independent of the main application.yml.
 @SpringBootTest(
     properties = [
-        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration",
-        "spring.cloud.stream.bindings.processOrder-in-0.destination=order-events"
-    ]
+        "spring.autoconfigure.exclude=" +
+            "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+            "org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration",
+        "spring.cloud.stream.bindings.processOrder-in-0.destination=order-events",
+    ],
 )
 @Import(TestChannelBinderConfiguration::class)
 class OrderProcessorTest {
-
     @Autowired
     private lateinit var inputDestination: InputDestination
 
@@ -55,12 +56,13 @@ class OrderProcessorTest {
     @Test
     fun `should process a new order and update its status to PROCESSING`() {
         // GIVEN
-        val inputOrder = Order(
-            _id = UUID.randomUUID(),
-            itemName = "ROG Ally X",
-            amount = 1,
-            status = OrderStatus.PENDING
-        )
+        val inputOrder =
+            Order(
+                _id = UUID.randomUUID(),
+                itemName = "ROG Ally X",
+                amount = 1,
+                status = OrderStatus.PENDING,
+            )
 
         // Create a slot to capture the Order object passed to the repository
         val orderSlot = slot<Order>()

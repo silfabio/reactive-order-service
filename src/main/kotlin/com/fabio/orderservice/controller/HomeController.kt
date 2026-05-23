@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono
  */
 @RestController
 class HomeController {
-
     companion object {
         private const val HOME_MESSAGE = "Reactive Order Service is running!"
     }

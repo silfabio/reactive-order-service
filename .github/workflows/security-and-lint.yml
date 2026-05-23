@@ -2,26 +2,24 @@ name: Security and Linting
 
 on:
   push:
-    branches:
-      - main
-      - chore/prepare-for-public-release # Run CI on push to this branch
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  # ktlint:
-  #   name: Ktlint Check
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v3
-  #     - name: Set up JDK 21
-  #       uses: actions/setup-java@v3
-  #       with:
-  #         java-version: '21'
-  #         distribution: 'temurin'
-  #     - name: Run ktlint
-  #       run: ./gradlew ktlintCheck
+  ktlint:
+    name: Ktlint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Run ktlint
+        run: ./gradlew ktlintCheck
 
   super-linter:
     name: Super-Linter
@@ -35,11 +33,10 @@ jobs:
 
       - name: Lint Repository
         uses: github/super-linter@v5
-        with:
-          # Exclude Kotlin files since they are handled by the dedicated ktlint job
-          # This filter is now less critical as the ktlint job is disabled, but good to keep for future re-enabling
-          filter_regex_exclude: .*src/.*\.kt
         env:
+          # Explicitly disable all Kotlin linters to avoid conflicts with the dedicated 'ktlint' job
+          VALIDATE_KOTLIN: false
+          VALIDATE_KOTLIN_ANDROID: false
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,22 +2,22 @@ package com.fabio.orderservice
 
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringTestExtension
+import io.r2dbc.spi.ConnectionFactories
+import io.r2dbc.spi.ConnectionFactory
+import io.r2dbc.spi.ConnectionFactoryOptions
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
-import io.r2dbc.spi.ConnectionFactories
-import io.r2dbc.spi.ConnectionFactory
-import io.r2dbc.spi.ConnectionFactoryOptions
 import javax.sql.DataSource
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureEmbeddedDatabase(
     type = AutoConfigureEmbeddedDatabase.DatabaseType.POSTGRES,
-    provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY
+    provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY,
 )
 @Import(SpringTestSpec.R2dbcBridgeConfig::class)
 abstract class SpringTestSpec : DescribeSpec() {
@@ -27,11 +27,9 @@ abstract class SpringTestSpec : DescribeSpec() {
 
     @Configuration
     class R2dbcBridgeConfig {
-
         @Bean
         fun connectionFactory(context: org.springframework.context.ApplicationContext): ConnectionFactory {
             return object : ConnectionFactory {
-
                 private fun getDelegate(): ConnectionFactory {
                     val dataSource = context.getBean(DataSource::class.java)
                     val jdbcUrl = dataSource.connection.use { it.metaData.url }
@@ -47,7 +45,7 @@ abstract class SpringTestSpec : DescribeSpec() {
                             .option(ConnectionFactoryOptions.DATABASE, dbName)
                             .option(ConnectionFactoryOptions.USER, "postgres")
                             .option(ConnectionFactoryOptions.PASSWORD, "")
-                            .build()
+                            .build(),
                     )
                 }
 
