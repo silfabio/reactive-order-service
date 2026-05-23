@@ -2,9 +2,7 @@ name: Security and Linting
 
 on:
   push:
-    branches:
-      - main
-      - temp/test-ktlint-ci # Run CI on push to this temporary branch
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -35,10 +33,9 @@ jobs:
 
       - name: Lint Repository
         uses: github/super-linter@v5
-        with:
-          # Exclude Kotlin files since they are handled by the dedicated ktlint job
-          filter_regex_exclude: .*src/.*\.kt
         env:
+          # Explicitly disable the Kotlin linter to avoid conflicts with the dedicated 'ktlint' job
+          VALIDATE_KOTLIN: false
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
