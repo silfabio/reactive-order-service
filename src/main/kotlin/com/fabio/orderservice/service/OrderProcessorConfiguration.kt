@@ -12,7 +12,6 @@ import java.util.function.Consumer
 
 @Configuration
 class OrderProcessorConfiguration(private val repository: OrderRepository) {
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**

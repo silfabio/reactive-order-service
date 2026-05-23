@@ -11,9 +11,8 @@ import java.util.UUID
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
-    private val streamBridge: StreamBridge
+    private val streamBridge: StreamBridge,
 ) {
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun createOrder(order: Order): Mono<Order> {

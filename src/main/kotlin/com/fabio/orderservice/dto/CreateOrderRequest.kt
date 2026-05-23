@@ -11,7 +11,6 @@ import jakarta.validation.constraints.NotBlank
 data class CreateOrderRequest(
     @field:NotBlank(message = "Item name must not be blank")
     val itemName: String,
-
     @field:Min(value = 1, message = "Amount must be at least 1")
-    val amount: Int
+    val amount: Int,
 )

@@ -12,7 +12,6 @@ import org.springframework.http.server.reactive.observation.ServerRequestObserva
  */
 @Configuration(proxyBeanMethods = false)
 class ObservationConfig {
-
     companion object {
         private const val ACTUATOR_PATH_PREFIX = "/actuator"
     }

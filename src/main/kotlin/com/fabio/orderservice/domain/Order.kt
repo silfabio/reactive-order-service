@@ -14,18 +14,13 @@ data class Order(
     @Column("id")
     @param:JsonProperty("id")
     private val _id: UUID? = null,
-
     @Column("ITEM_NAME")
     val itemName: String,
-
     @Column("AMOUNT")
     val amount: Int,
-
     @Column("STATUS")
-    val status: OrderStatus = OrderStatus.PENDING
-
+    val status: OrderStatus = OrderStatus.PENDING,
 ) : Persistable<UUID> {
-
     // Expose the ID via a public getter.
     override fun getId(): UUID? = _id
 

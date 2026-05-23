@@ -23,74 +23,75 @@ import java.util.UUID
 @Import(GlobalExceptionHandler::class) // Import the custom exception handler into the test context
 class OrderControllerTest(
     private val webTestClient: WebTestClient,
-    @MockkBean private val orderService: OrderService
+    @MockkBean private val orderService: OrderService,
 ) : FunSpec({
 
-    val orderId = UUID.randomUUID()
-    val sampleOrder = Order(
-        _id = orderId,
-        itemName = "Test Item",
-        amount = 10,
-        status = OrderStatus.PENDING
-    )
+        val orderId = UUID.randomUUID()
+        val sampleOrder =
+            Order(
+                _id = orderId,
+                itemName = "Test Item",
+                amount = 10,
+                status = OrderStatus.PENDING,
+            )
 
-    test("POST /orders should create a new order") {
-        val createRequest = CreateOrderRequest(itemName = "New Item", amount = 5)
-        // The 'copy()' method will also use the '_id' parameter name internally.
-        val createdOrder = sampleOrder.copy(itemName = createRequest.itemName, amount = createRequest.amount)
+        test("POST /orders should create a new order") {
+            val createRequest = CreateOrderRequest(itemName = "New Item", amount = 5)
+            // The 'copy()' method will also use the '_id' parameter name internally.
+            val createdOrder = sampleOrder.copy(itemName = createRequest.itemName, amount = createRequest.amount)
 
-        every { orderService.createOrder(any()) } returns Mono.just(createdOrder)
+            every { orderService.createOrder(any()) } returns Mono.just(createdOrder)
 
-        webTestClient.post().uri("/orders")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(createRequest)
-            .exchange()
-            .expectStatus().isCreated
-            .expectBody(Order::class.java)
-            .value {
-                it.id shouldBe createdOrder.id
-                it.itemName shouldBe createRequest.itemName
-                it.amount shouldBe createRequest.amount
-                it.status shouldBe OrderStatus.PENDING
-            }
-    }
+            webTestClient.post().uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(createRequest)
+                .exchange()
+                .expectStatus().isCreated
+                .expectBody(Order::class.java)
+                .value {
+                    it.id shouldBe createdOrder.id
+                    it.itemName shouldBe createRequest.itemName
+                    it.amount shouldBe createRequest.amount
+                    it.status shouldBe OrderStatus.PENDING
+                }
+        }
 
-    test("POST /orders should return 400 with detailed error messages for invalid request") {
-        val invalidRequest = CreateOrderRequest(itemName = "", amount = 0) // Invalid: blank name, amount <= 0
+        test("POST /orders should return 400 with detailed error messages for invalid request") {
+            val invalidRequest = CreateOrderRequest(itemName = "", amount = 0) // Invalid: blank name, amount <= 0
 
-        webTestClient.post().uri("/orders")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(invalidRequest)
-            .exchange()
-            .expectStatus().isBadRequest // Expecting 400 Bad Request due to @Valid
-            .expectBody<Map<String, Any>>()
-            .value { response ->
-                response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
-                val errors = response["errors"] as List<String>
-                errors shouldContain "Item name must not be blank"
-                errors shouldContain "Amount must be at least 1"
-            }
-    }
+            webTestClient.post().uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest // Expecting 400 Bad Request due to @Valid
+                .expectBody<Map<String, Any>>()
+                .value { response ->
+                    response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
+                    val errors = response["errors"] as List<String>
+                    errors shouldContain "Item name must not be blank"
+                    errors shouldContain "Amount must be at least 1"
+                }
+        }
 
-    test("GET /orders/{id} should return an order if found") {
-        every { orderService.findById(orderId) } returns Mono.just(sampleOrder)
+        test("GET /orders/{id} should return an order if found") {
+            every { orderService.findById(orderId) } returns Mono.just(sampleOrder)
 
-        webTestClient.get().uri("/orders/{id}", orderId)
-            .exchange()
-            .expectStatus().isOk
-            .expectBody(Order::class.java)
-            .value {
-                it.id shouldBe sampleOrder.id
-                it.itemName shouldBe sampleOrder.itemName
-            }
-    }
+            webTestClient.get().uri("/orders/{id}", orderId)
+                .exchange()
+                .expectStatus().isOk
+                .expectBody(Order::class.java)
+                .value {
+                    it.id shouldBe sampleOrder.id
+                    it.itemName shouldBe sampleOrder.itemName
+                }
+        }
 
-    test("GET /orders/{id} should return 404 if order not found") {
-        every { orderService.findById(any()) } returns Mono.empty()
+        test("GET /orders/{id} should return 404 if order not found") {
+            every { orderService.findById(any()) } returns Mono.empty()
 
-        webTestClient.get().uri("/orders/{id}", UUID.randomUUID())
-            .exchange()
-            .expectStatus().isNotFound
-            .expectBody().isEmpty
-    }
-})
+            webTestClient.get().uri("/orders/{id}", UUID.randomUUID())
+                .exchange()
+                .expectStatus().isNotFound
+                .expectBody().isEmpty
+        }
+    })

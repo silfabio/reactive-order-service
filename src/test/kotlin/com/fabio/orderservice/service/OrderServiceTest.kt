@@ -20,7 +20,6 @@ import java.util.UUID
 
 @ExtendWith(MockKExtension::class)
 class OrderServiceTest {
-
     @MockK
     lateinit var orderRepository: OrderRepository
 
