@@ -19,7 +19,7 @@ The architecture is designed to be cloud-native, with a clear separation between
 
 <div align="center">
 
-![Architecture Diagram](docs/architecture/architecture.svg)
+![Architecture Diagram](docs/architecture/architecture.png)
 
 </div>
 
