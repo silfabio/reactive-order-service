@@ -1,6 +1,13 @@
 # .pre-commit-config.yaml
 # This file configures the pre-commit hooks that run automatically before each commit.
 repos:
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.95.3
+    hooks:
+      - id: trufflehog
+        name: TruffleHog Secret Scan
+        args: [--only-verified]
+
   - repo: local
     hooks:
       - id: super-linter
@@ -11,4 +18,4 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        stages: [commit]
+        stages: [pre-commit]
