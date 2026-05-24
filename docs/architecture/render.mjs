@@ -2,8 +2,22 @@ import puppeteer from 'puppeteer';
 import fs from 'fs/promises';
 import path from 'path';
 
+// Helper function to fetch an image and convert it to a Base64 data URI
+const imageToDataURI = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.warn(`Failed to fetch image ${url}: ${response.statusText}`);
+    return url; // Return original URL on failure
+  }
+  const buffer = await response.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString('base64');
+  // Get content type from headers, default to svg
+  const contentType = response.headers.get('content-type') || 'image/svg+xml';
+  return `data:${contentType};base64,${base64}`;
+};
+
 const renderDiagram = async () => {
-  console.log('Starting diagram rendering...');
+  console.log('Starting diagram rendering with image embedding...');
 
   // 1. Read source files
   const mmdPath = path.resolve(process.cwd(), 'architecture.mmd');
@@ -30,17 +44,37 @@ const renderDiagram = async () => {
     mermaidLibContent
   );
 
-  // 4. Clean the generated SVG by self-closing <br> and <img> tags
-  let cleanedSvg = rawSvgResult.svg
+  await browser.close();
+
+  // 4. Post-process the SVG to embed images
+  console.log('Post-processing SVG to embed images...');
+  let svg = rawSvgResult.svg;
+
+  // Find all image tags
+  const imgRegex = /<img src="([^"]+)"/g;
+  const matches = [...svg.matchAll(imgRegex)];
+  
+  if (matches.length > 0) {
+    const urls = matches.map(match => match[1]);
+    const dataUris = await Promise.all(urls.map(imageToDataURI));
+
+    // Replace each URL with its corresponding data URI
+    urls.forEach((url, index) => {
+      console.log(`Embedding ${url}...`);
+      svg = svg.replace(url, dataUris[index]);
+    });
+  }
+
+  // 5. Clean the generated SVG by self-closing <br> and <img> tags
+  const finalSvg = svg
     .replace(/<br>/g, '<br/>')
     .replace(/<img([^>]+)>/g, (match, group1) => `<img${group1}/>`);
 
-  // 5. Write the final SVG to a file
+  // 6. Write the final SVG to a file
   const outputPath = path.resolve(process.cwd(), 'architecture.svg');
-  await fs.writeFile(outputPath, cleanedSvg);
+  await fs.writeFile(outputPath, finalSvg);
 
-  await browser.close();
-  console.log('Diagram rendered successfully to architecture.svg');
+  console.log('Diagram rendered successfully with embedded images to architecture.svg');
 };
 
 renderDiagram().catch(error => {
