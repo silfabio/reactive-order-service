@@ -1,8 +1,14 @@
 # Architecture Diagram
 
-This directory contains the source code (`architecture.mmd`) and rendering script for the project's architecture diagram.
+This directory contains the source code (`architecture.mmd`) and rendering tools for the project's architecture diagram.
 
-The diagram is authored using Mermaid.js syntax. The final SVG is generated using a Node.js script with Puppeteer to ensure external icons are rendered correctly.
+The diagram is authored using Mermaid.js syntax. The final PNG image is generated using the official `@mermaid-js/mermaid-cli` tool to ensure consistent rendering.
+
+<div align="center">
+
+![Architecture Diagram](architecture.png)
+
+</div>
 
 ## Prerequisites
 
@@ -21,20 +27,14 @@ This will create a local `node_modules` directory inside `docs/architecture/` wi
 
 ## Rendering the Diagram
 
-To generate or update the `architecture.svg` file from the `architecture.mmd` source, run the rendering script from within this directory:
-
-```sh
-node render-diagram.mjs
-```
-
-Alternatively, you can use the npm script shortcut:
+To generate or update the `architecture.png` file from the `architecture.mmd` source, run the rendering script from within this directory:
 
 ```sh
 npm run render
 ```
 
-This command will launch a headless browser, render the diagram, and save the output to `architecture.svg`.
+This command will launch a headless browser, render the diagram, and save the output to `architecture.png`.
 
 ## Modifying the Diagram
 
-To make changes, edit the `architecture.mmd` file. The `architecture.svg` file is a generated artifact and should not be edited directly. After modifying the `.mmd` file, run the rendering script to regenerate the SVG.
+To make changes, edit the `architecture.mmd` file. The `architecture.png` file is a generated artifact and should not be edited directly. After modifying the `.mmd` file, run the rendering script again to regenerate the image.
