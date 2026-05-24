@@ -4,6 +4,12 @@ This directory contains the source code (`architecture.mmd`) and rendering scrip
 
 The diagram is authored using Mermaid.js syntax. The final SVG is generated using a Node.js script with Puppeteer to ensure external icons are rendered correctly.
 
+<div align="center">
+
+![Architecture Diagram](docs/architecture/architecture.svg)
+
+</div>
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (which includes npm) must be installed on your system.

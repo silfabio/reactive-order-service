@@ -2,15 +2,15 @@
   "name": "diagram-renderer",
   "version": "1.0.0",
   "description": "Renders Mermaid diagrams to SVG",
-  "main": "../../render-diagram.mjs",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "render": "node ../../render-diagram.mjs"
+    "render": "mmdc -i architecture.mmd -o architecture.svg --puppeteerConfigFile puppeteer-config.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "puppeteer": "^22.10.0"
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.0"
   }
 }
