@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# Restrict the permissions granted to the GITHUB_TOKEN for this workflow
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Build and Test

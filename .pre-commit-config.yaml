@@ -14,7 +14,8 @@ repos:
         name: Super-Linter
         # This entry runs the super-linter in a Docker container.
         # We use 'bash -c' to ensure the standard $PWD shell variable is expanded correctly.
-        entry: bash -c 'docker run --rm -e RUN_LOCAL=true -e GITHUB_ACTIONS=true -e FILTER_REGEX_EXCLUDE=".*src/.*\\.kt" -v "$PWD:/tmp/lint" github/super-linter:v5'
+        # We add VALIDATE_ALL_CODEBASE=true to make the local run as strict as the CI run.
+        entry: bash -c 'docker run --rm -e RUN_LOCAL=true -e GITHUB_ACTIONS=true -e VALIDATE_ALL_CODEBASE=true -e FILTER_REGEX_EXCLUDE=".*src/.*\\.kt" -v "$PWD:/tmp/lint" github/super-linter:v5'
         language: system
         pass_filenames: false
         always_run: true
