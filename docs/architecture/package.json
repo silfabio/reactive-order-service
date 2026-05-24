@@ -1,16 +1,17 @@
 {
   "name": "diagram-renderer",
   "version": "1.0.0",
-  "description": "Renders Mermaid diagrams to SVG",
-  "main": "index.js",
+  "description": "Renders Mermaid diagrams to SVG with embedded fonts.",
+  "main": "render.mjs",
   "type": "module",
   "scripts": {
-    "render": "mmdc -i architecture.mmd -o architecture.svg --puppeteerConfigFile puppeteer-config.json"
+    "render": "node render.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@mermaid-js/mermaid-cli": "^10.9.0"
+  "dependencies": {
+    "mermaid": "^10.9.0",
+    "puppeteer": "^22.10.0"
   }
 }
