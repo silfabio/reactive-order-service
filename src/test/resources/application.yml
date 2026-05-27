@@ -1,3 +1,4 @@
+---
 # Test-specific properties
 # This file overrides the main application.yml during the test phase.
 

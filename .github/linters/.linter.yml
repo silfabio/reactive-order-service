@@ -1,0 +1,7 @@
+# .github/linters/.linter.yml
+# Configuration file for the Super-Linter.
+# This file allows us to customize which linters are run.
+
+# Disable the copy-paste detector, as some duplication in CI workflows is acceptable.
+DISABLE_LINTERS:
+  - JSCPD
