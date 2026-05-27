@@ -19,7 +19,7 @@ The architecture is designed to be cloud-native, with a clear separation between
 
 <div align="center">
 
-![Architecture Diagram](docs/architecture/architecture.svg)
+![Architecture Diagram](docs/architecture/architecture.png)
 
 </div>
 
@@ -35,6 +35,16 @@ The architecture is designed to be cloud-native, with a clear separation between
 - **Functional Style:** Leveraging Kotlin's expressive syntax and functional programming patterns.
 - **Clean Code:** Adhering to SOLID principles and a clear separation of concerns.
 - **Validation:** Robust request validation using Spring Boot Validation.
+
+## 🗺️ Roadmap & Future Enhancements
+
+This project serves as a strong foundation. The following features are planned for future iterations to evolve it into a fully production-grade microservice:
+
+- **📊 Custom Metrics:** Enhance observability by adding custom business metrics with Micrometer (e.g., `orders.created.count`, `orders.processing.time`).
+- **💪 Resilience:** Implement fault tolerance patterns using `Resilience4j` (e.g., `CircuitBreaker` for downstream service calls, `Retry` for transient failures).
+- **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure on AWS using `Terraform` and test it locally with `Floci` (a LocalStack-based tool).
+- **🔒 Secret Management:** Externalize secrets (database credentials, API keys) from configuration files into `HashiCorp Vault`.
+- **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
 
 ## 🏁 Getting Started
 
