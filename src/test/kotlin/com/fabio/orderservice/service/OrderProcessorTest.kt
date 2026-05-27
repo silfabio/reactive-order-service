@@ -75,7 +75,6 @@ class OrderProcessorTest {
         inputDestination.send(MessageBuilder.withPayload(inputOrder).build(), "order-events")
 
         // THEN
-        // The fix is here: Use capture() inside the verify block.
         // This waits for the async call and populates the slot in one step.
         verify(timeout = 5000, exactly = 1) {
             orderRepository.save(capture(orderSlot))
