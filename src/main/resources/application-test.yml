@@ -1,3 +1,4 @@
+---
 # Configuration for the 'test' profile, activated during JUnit/Kotest runs.
 
 # Use a random available port to prevent port conflicts on CI servers.
