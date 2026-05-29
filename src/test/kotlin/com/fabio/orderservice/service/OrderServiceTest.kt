@@ -30,9 +30,10 @@ class OrderServiceTest {
     lateinit var streamBridge: StreamBridge
 
     private val meterRegistry = SimpleMeterRegistry()
-    private val observationRegistry = ObservationRegistry.create().apply {
-        observationConfig().observationHandler(io.micrometer.core.instrument.observation.DefaultMeterObservationHandler(meterRegistry))
-    }
+    private val observationRegistry =
+        ObservationRegistry.create().apply {
+            observationConfig().observationHandler(io.micrometer.core.instrument.observation.DefaultMeterObservationHandler(meterRegistry))
+        }
 
     @InjectMockKs
     lateinit var orderService: OrderService
