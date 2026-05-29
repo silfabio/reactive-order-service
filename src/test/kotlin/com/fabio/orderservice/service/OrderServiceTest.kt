@@ -5,12 +5,15 @@ import com.fabio.orderservice.domain.OrderRepository
 import com.fabio.orderservice.domain.OrderStatus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.observation.ObservationRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.cloud.stream.function.StreamBridge
@@ -26,11 +29,22 @@ class OrderServiceTest {
     @MockK(relaxed = true)
     lateinit var streamBridge: StreamBridge
 
+    private val meterRegistry = SimpleMeterRegistry()
+    private val observationRegistry =
+        ObservationRegistry.create().apply {
+            observationConfig().observationHandler(io.micrometer.core.instrument.observation.DefaultMeterObservationHandler(meterRegistry))
+        }
+
     @InjectMockKs
     lateinit var orderService: OrderService
 
+    @BeforeEach
+    fun setup() {
+        orderService = OrderService(orderRepository, streamBridge, observationRegistry)
+    }
+
     @Test
-    fun `should create order successfully`() {
+    fun `should create order successfully and record observation`() {
         // GIVEN
         val orderToCreate = Order(itemName = "ROG Ally X", amount = 1)
         val savedOrder = orderToCreate.copy(_id = UUID.randomUUID(), status = OrderStatus.PENDING)
@@ -45,7 +59,8 @@ class OrderServiceTest {
         val result = orderService.createOrder(orderToCreate)
 
         // THEN
-        StepVerifier.create(result)
+        StepVerifier
+            .create(result)
             .expectNext(savedOrder)
             .verifyComplete()
 
@@ -62,6 +77,9 @@ class OrderServiceTest {
 
         val capturedStreamOrder = streamBridgeOrderSlot.captured
         capturedStreamOrder shouldBe savedOrder
+
+        // Verify that an observation (which creates a timer) was recorded
+        meterRegistry.get("orders.created").timer().count() shouldBe 1
     }
 
     @Test
@@ -74,7 +92,8 @@ class OrderServiceTest {
         val result = orderService.findById(existingOrder.id!!)
 
         // THEN
-        StepVerifier.create(result)
+        StepVerifier
+            .create(result)
             .expectNext(existingOrder)
             .verifyComplete()
 
@@ -91,7 +110,8 @@ class OrderServiceTest {
         val result = orderService.findById(nonExistentId)
 
         // THEN
-        StepVerifier.create(result)
+        StepVerifier
+            .create(result)
             .expectNextCount(0)
             .verifyComplete()
 
