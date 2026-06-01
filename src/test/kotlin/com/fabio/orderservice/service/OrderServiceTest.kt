@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.cloud.stream.function.StreamBridge
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import java.io.IOException
 import java.util.UUID
 
 @ExtendWith(MockKExtension::class)
@@ -80,6 +81,32 @@ class OrderServiceTest {
 
         // Verify that an observation (which creates a timer) was recorded
         meterRegistry.get("orders.created").timer().count() shouldBe 1
+    }
+
+    @Test
+    fun `should handle errors during order creation and record observation`() {
+        // GIVEN
+        val orderToCreate = Order(itemName = "Faulty Item", amount = 1)
+        val testException = IOException("Database connection failed")
+
+        every { orderRepository.save(any()) } returns Mono.error(testException)
+
+        // WHEN
+        val result = orderService.createOrder(orderToCreate)
+
+        // THEN
+        StepVerifier
+            .create(result)
+            .expectError(IOException::class.java)
+            .verify()
+
+        // Verify that the streamBridge was NOT called
+        verify(exactly = 0) { streamBridge.send(any(), any()) }
+
+        // Verify that the observation recorded an error
+        val timer = meterRegistry.get("orders.created").timer()
+        timer.count() shouldBe 1
+        timer.id.getTag("error") shouldBe "IOException"
     }
 
     @Test
