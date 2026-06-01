@@ -56,13 +56,18 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Run tests
-        run: ./gradlew test
+      - name: Build and run tests
+        run: ./gradlew build
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: build/reports/tests/test
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: build/reports/jacoco/test/jacocoTestReport.xml
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -73,21 +78,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Download test reports
+        uses: actions/download-artifact@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          name: test-reports
+          path: build/test-results/test
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-reports
+          path: build/reports/jacoco/test/jacocoTestReport.xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=silfabio_reactive-order-service
-            -Dsonar.organization=silfabio
-            -Dsonar.host.url=https://sonarcloud.io
 
   ktlint:
     name: Ktlint Check

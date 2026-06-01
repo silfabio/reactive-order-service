@@ -35,6 +35,7 @@ The architecture is designed to be cloud-native, with a clear separation between
 - **Functional Style:** Leveraging Kotlin's expressive syntax and functional programming patterns.
 - **Clean Code:** Adhering to SOLID principles and a clear separation of concerns.
 - **Validation:** Robust request validation using Spring Boot Validation.
+- **Static Analysis:** Automated code quality and security scanning with SonarCloud.
 
 ## 🗺️ Roadmap & Future Enhancements
 
@@ -51,10 +52,10 @@ This project serves as a strong foundation. The following features are planned f
 ### 1. Prerequisites
 - **Java 21** (Required for the JVM Toolchain)
 - **Docker & Docker Compose**
-- **Node.js & npm** (For rendering the architecture diagram)
+- **Node.js & npm** (For running local scripts)
 
 ### 2. Start Infrastructure
-Spin up PostgreSQL, Kafka, Prometheus, Zipkin, and Grafana:
+Spin up PostgreSQL, Kafka, and the full observability stack (including SonarQube):
 
 ```sh
 docker compose up -d
@@ -62,6 +63,29 @@ docker compose up -d
 
 ### 3. Run the Application
 Start the Spring Boot service from your IDE.
+
+## 🔬 Code Quality & Static Analysis
+
+This project uses SonarCloud for continuous inspection of code quality and security.
+
+### Local Analysis with SonarQube
+To run a full analysis on your local machine before committing, you can use the local SonarQube instance provided in the Docker Compose setup.
+
+**One-Time Setup:**
+1. **Start Docker:** Run `docker compose up -d` and wait for the `sonarqube` container to become operational.
+2. **Log in to SonarQube:** Open <http://localhost:9000>, log in with `admin`/`admin`, and change the password when prompted.
+3. **Generate a User Token:** Go to **My Account > Security** and generate a new token.
+4. **Configure Local Properties:** Create a file named `sonar-project.properties` in the project root (this file is git-ignored). Copy the contents of `sonar-project.properties.example` into it and replace `YOUR_LOCAL_SONAR_TOKEN_HERE` with the token you just generated.
+
+**Running a Local Scan:**
+Once set up, you can run a local scan at any time with a single command from the project root:
+```sh
+npm run sonar:local
+```
+After the analysis is complete, you can view the full report at <http://localhost:9000>.
+
+### CI/CD Integration
+On every pull request, a GitHub Actions workflow automatically runs a SonarCloud scan and decorates the PR with the results, ensuring that all new code meets the defined quality gate.
 
 ## 🎣 Pre-Commit Hooks
 
@@ -151,3 +175,4 @@ Once the infrastructure is up and the application is running, you can access the
 - **Grafana:** <http://localhost:3000> (Login details are in `.env.example`)
 - **Zipkin Tracing:** <http://localhost:9411>
 - **PostgreSQL:** `localhost:5432` (Login details are in `.env.example`, DB: `orders_db`)
+- **SonarQube (Local):** <http://localhost:9000>
