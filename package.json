@@ -3,6 +3,7 @@
   "version": "0.0.1-SNAPSHOT",
   "private": true,
   "scripts": {
-    "sonar:local": "./gradlew build && docker run --rm -v \"$(pwd):/usr/src\" --network=host sonarsource/sonar-scanner-cli"
+    "pre-sonar:local": "./gradlew build",
+    "sonar:local": "docker run --rm -v \"$PWD:/usr/src\" --network=host sonarsource/sonar-scanner-cli"
   }
 }

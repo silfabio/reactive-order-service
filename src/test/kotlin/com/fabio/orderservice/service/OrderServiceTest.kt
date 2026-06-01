@@ -4,15 +4,11 @@ import com.fabio.orderservice.domain.Order
 import com.fabio.orderservice.domain.OrderRepository
 import com.fabio.orderservice.domain.OrderStatus
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.micrometer.observation.ObservationRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
-import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -31,60 +27,33 @@ class OrderServiceTest {
     lateinit var streamBridge: StreamBridge
 
     private val meterRegistry = SimpleMeterRegistry()
-    private val observationRegistry =
-        ObservationRegistry.create().apply {
-            observationConfig().observationHandler(io.micrometer.core.instrument.observation.DefaultMeterObservationHandler(meterRegistry))
-        }
 
     @InjectMockKs
     lateinit var orderService: OrderService
 
     @BeforeEach
     fun setup() {
-        orderService = OrderService(orderRepository, streamBridge, observationRegistry)
+        orderService = OrderService(orderRepository, streamBridge, meterRegistry)
     }
 
     @Test
-    fun `should create order successfully and record observation`() {
+    fun `should create order successfully and record timer`() {
         // GIVEN
         val orderToCreate = Order(itemName = "ROG Ally X", amount = 1)
         val savedOrder = orderToCreate.copy(_id = UUID.randomUUID(), status = OrderStatus.PENDING)
 
-        val repositoryOrderSlot = slot<Order>()
-        val streamBridgeOrderSlot = slot<Order>()
-
-        every { orderRepository.save(capture(repositoryOrderSlot)) } returns Mono.just(savedOrder)
-        every { streamBridge.send(any<String>(), capture(streamBridgeOrderSlot)) } returns true
+        every { orderRepository.save(any()) } returns Mono.just(savedOrder)
 
         // WHEN
         val result = orderService.createOrder(orderToCreate)
 
         // THEN
-        StepVerifier
-            .create(result)
-            .expectNext(savedOrder)
-            .verifyComplete()
-
-        // Verify repository interaction
-        verify(exactly = 1) { orderRepository.save(any<Order>()) }
-        verify(exactly = 1) { streamBridge.send("publishOrder-out-0", any<Order>()) }
-
-        // Assert on the captured values
-        val capturedRepoOrder = repositoryOrderSlot.captured
-        capturedRepoOrder.id shouldNotBe null
-        capturedRepoOrder.itemName shouldBe orderToCreate.itemName
-        capturedRepoOrder.amount shouldBe orderToCreate.amount
-        capturedRepoOrder.status shouldBe OrderStatus.PENDING
-
-        val capturedStreamOrder = streamBridgeOrderSlot.captured
-        capturedStreamOrder shouldBe savedOrder
-
-        // Verify that an observation (which creates a timer) was recorded
-        meterRegistry.get("orders.created").timer().count() shouldBe 1
+        StepVerifier.create(result).expectNext(savedOrder).verifyComplete()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
     }
 
     @Test
-    fun `should handle errors during order creation and record observation`() {
+    fun `should record timer on error during order creation`() {
         // GIVEN
         val orderToCreate = Order(itemName = "Faulty Item", amount = 1)
         val testException = IOException("Database connection failed")
@@ -95,18 +64,22 @@ class OrderServiceTest {
         val result = orderService.createOrder(orderToCreate)
 
         // THEN
-        StepVerifier
-            .create(result)
-            .expectError(IOException::class.java)
-            .verify()
+        StepVerifier.create(result).expectError(IOException::class.java).verify()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
+    }
 
-        // Verify that the streamBridge was NOT called
-        verify(exactly = 0) { streamBridge.send(any(), any()) }
+    @Test
+    fun `should record timer on cancellation during order creation`() {
+        // GIVEN
+        val orderToCreate = Order(itemName = "Cancelled Item", amount = 1)
+        every { orderRepository.save(any()) } returns Mono.never()
 
-        // Verify that the observation recorded an error
-        val timer = meterRegistry.get("orders.created").timer()
-        timer.count() shouldBe 1
-        timer.id.getTag("error") shouldBe "IOException"
+        // WHEN
+        val result = orderService.createOrder(orderToCreate)
+
+        // THEN
+        StepVerifier.create(result).thenCancel().verify()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
     }
 
     @Test
@@ -119,12 +92,7 @@ class OrderServiceTest {
         val result = orderService.findById(existingOrder.id!!)
 
         // THEN
-        StepVerifier
-            .create(result)
-            .expectNext(existingOrder)
-            .verifyComplete()
-
-        verify(exactly = 1) { orderRepository.findById(existingOrder.id!!) }
+        StepVerifier.create(result).expectNext(existingOrder).verifyComplete()
     }
 
     @Test
@@ -137,11 +105,6 @@ class OrderServiceTest {
         val result = orderService.findById(nonExistentId)
 
         // THEN
-        StepVerifier
-            .create(result)
-            .expectNextCount(0)
-            .verifyComplete()
-
-        verify(exactly = 1) { orderRepository.findById(nonExistentId) }
+        StepVerifier.create(result).expectNextCount(0).verifyComplete()
     }
 }

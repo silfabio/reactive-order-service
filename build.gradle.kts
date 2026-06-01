@@ -57,9 +57,9 @@ dependencies {
 
     // Observability
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus") // For Prometheus metrics
-    implementation("io.micrometer:micrometer-tracing-bridge-otel") // OpenTelemetry tracing bridge
-    implementation("io.opentelemetry:opentelemetry-exporter-zipkin") // Zipkin exporter
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 
     // R2DBC Proxy (for debugging/logging R2DBC queries)
     implementation("io.r2dbc:r2dbc-proxy")
