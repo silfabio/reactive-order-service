@@ -20,6 +20,12 @@ fi
 echo "==> Building project..."
 ./gradlew build
 
+echo "==> Waiting for SonarQube..."
+until curl -sf "http://localhost:9000/api/system/status" | grep -q '"status":"UP"'; do
+	echo "   still starting, waiting 5s..."
+	sleep 5
+done
+
 echo "==> Running SonarQube analysis against $HOST_URL ..."
 docker run --rm \
 	-v "$PWD:/usr/src" \
