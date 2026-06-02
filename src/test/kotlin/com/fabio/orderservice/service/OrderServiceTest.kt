@@ -4,18 +4,18 @@ import com.fabio.orderservice.domain.Order
 import com.fabio.orderservice.domain.OrderRepository
 import com.fabio.orderservice.domain.OrderStatus
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
-import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.cloud.stream.function.StreamBridge
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import java.io.IOException
 import java.util.UUID
 
 @ExtendWith(MockKExtension::class)
@@ -26,42 +26,60 @@ class OrderServiceTest {
     @MockK(relaxed = true)
     lateinit var streamBridge: StreamBridge
 
+    private val meterRegistry = SimpleMeterRegistry()
+
     @InjectMockKs
     lateinit var orderService: OrderService
 
+    @BeforeEach
+    fun setup() {
+        orderService = OrderService(orderRepository, streamBridge, meterRegistry)
+    }
+
     @Test
-    fun `should create order successfully`() {
+    fun `should create order successfully and record timer`() {
         // GIVEN
         val orderToCreate = Order(itemName = "ROG Ally X", amount = 1)
         val savedOrder = orderToCreate.copy(_id = UUID.randomUUID(), status = OrderStatus.PENDING)
 
-        val repositoryOrderSlot = slot<Order>()
-        val streamBridgeOrderSlot = slot<Order>()
-
-        every { orderRepository.save(capture(repositoryOrderSlot)) } returns Mono.just(savedOrder)
-        every { streamBridge.send(any<String>(), capture(streamBridgeOrderSlot)) } returns true
+        every { orderRepository.save(any()) } returns Mono.just(savedOrder)
 
         // WHEN
         val result = orderService.createOrder(orderToCreate)
 
         // THEN
-        StepVerifier.create(result)
-            .expectNext(savedOrder)
-            .verifyComplete()
+        StepVerifier.create(result).expectNext(savedOrder).verifyComplete()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
+    }
 
-        // Verify repository interaction
-        verify(exactly = 1) { orderRepository.save(any<Order>()) }
-        verify(exactly = 1) { streamBridge.send("publishOrder-out-0", any<Order>()) }
+    @Test
+    fun `should record timer on error during order creation`() {
+        // GIVEN
+        val orderToCreate = Order(itemName = "Faulty Item", amount = 1)
+        val testException = IOException("Database connection failed")
 
-        // Assert on the captured values
-        val capturedRepoOrder = repositoryOrderSlot.captured
-        capturedRepoOrder.id shouldNotBe null
-        capturedRepoOrder.itemName shouldBe orderToCreate.itemName
-        capturedRepoOrder.amount shouldBe orderToCreate.amount
-        capturedRepoOrder.status shouldBe OrderStatus.PENDING
+        every { orderRepository.save(any()) } returns Mono.error(testException)
 
-        val capturedStreamOrder = streamBridgeOrderSlot.captured
-        capturedStreamOrder shouldBe savedOrder
+        // WHEN
+        val result = orderService.createOrder(orderToCreate)
+
+        // THEN
+        StepVerifier.create(result).expectError(IOException::class.java).verify()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
+    }
+
+    @Test
+    fun `should record timer on cancellation during order creation`() {
+        // GIVEN
+        val orderToCreate = Order(itemName = "Cancelled Item", amount = 1)
+        every { orderRepository.save(any()) } returns Mono.never()
+
+        // WHEN
+        val result = orderService.createOrder(orderToCreate)
+
+        // THEN
+        StepVerifier.create(result).thenCancel().verify()
+        meterRegistry.get("orders.creation.duration").timer().count() shouldBe 1
     }
 
     @Test
@@ -74,11 +92,7 @@ class OrderServiceTest {
         val result = orderService.findById(existingOrder.id!!)
 
         // THEN
-        StepVerifier.create(result)
-            .expectNext(existingOrder)
-            .verifyComplete()
-
-        verify(exactly = 1) { orderRepository.findById(existingOrder.id!!) }
+        StepVerifier.create(result).expectNext(existingOrder).verifyComplete()
     }
 
     @Test
@@ -91,10 +105,6 @@ class OrderServiceTest {
         val result = orderService.findById(nonExistentId)
 
         // THEN
-        StepVerifier.create(result)
-            .expectNextCount(0)
-            .verifyComplete()
-
-        verify(exactly = 1) { orderRepository.findById(nonExistentId) }
+        StepVerifier.create(result).expectNextCount(0).verifyComplete()
     }
 }

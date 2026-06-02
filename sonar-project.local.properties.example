@@ -1,0 +1,9 @@
+# Template for local SonarQube analysis configuration.
+# Copy this file to 'sonar-project.local.properties' (already in .gitignore) and fill in your values.
+
+# URL of your local SonarQube instance.
+# 'host.docker.internal' lets the Docker-based scanner reach a service running on the host machine.
+sonar.host.url=http://host.docker.internal:9000
+
+# Your local SonarQube user token (My Account > Security > Generate Token in the SonarQube UI).
+sonar.token=YOUR_LOCAL_SONAR_TOKEN_HERE

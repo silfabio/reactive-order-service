@@ -6,6 +6,7 @@ plugins {
     id("org.springframework.boot") version "3.3.0"
     id("io.spring.dependency-management") version "1.1.5"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    jacoco
 }
 
 group = "com.fabio.orderservice"
@@ -16,6 +17,11 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+// Configure the JaCoCo tool version to be compatible with Spring Boot 3.3+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 repositories {
@@ -51,9 +57,9 @@ dependencies {
 
     // Observability
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus") // For Prometheus metrics
-    implementation("io.micrometer:micrometer-tracing-bridge-otel") // OpenTelemetry tracing bridge
-    implementation("io.opentelemetry:opentelemetry-exporter-zipkin") // Zipkin exporter
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 
     // R2DBC Proxy (for debugging/logging R2DBC queries)
     implementation("io.r2dbc:r2dbc-proxy")
@@ -103,7 +109,19 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.named("jacocoTestReport"))
     jvmArgs("-XX:+EnableDynamicAgentLoading")
+}
+
+tasks.withType<JacocoReport> {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("jacocoTestReport"))
 }
 
 configurations.all {

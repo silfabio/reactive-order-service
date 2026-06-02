@@ -35,6 +35,7 @@ The architecture is designed to be cloud-native, with a clear separation between
 - **Functional Style:** Leveraging Kotlin's expressive syntax and functional programming patterns.
 - **Clean Code:** Adhering to SOLID principles and a clear separation of concerns.
 - **Validation:** Robust request validation using Spring Boot Validation.
+- **Static Analysis:** Automated code quality and security scanning with SonarCloud.
 
 ## 🗺️ Roadmap & Future Enhancements
 
@@ -51,10 +52,10 @@ This project serves as a strong foundation. The following features are planned f
 ### 1. Prerequisites
 - **Java 21** (Required for the JVM Toolchain)
 - **Docker & Docker Compose**
-- **Node.js & npm** (For rendering the architecture diagram)
+- **Node.js & npm** (For running local scripts)
 
 ### 2. Start Infrastructure
-Spin up PostgreSQL, Kafka, Prometheus, Zipkin, and Grafana:
+Spin up PostgreSQL, Kafka, and the full observability stack (including SonarQube):
 
 ```sh
 docker compose up -d
@@ -62,6 +63,76 @@ docker compose up -d
 
 ### 3. Run the Application
 Start the Spring Boot service from your IDE.
+
+## 🧪 Testing the API
+
+The full request collection lives in `docs/http/orders.http`. Below are the equivalent `curl` commands for running them from the terminal.
+
+### Create an Order
+
+```sh
+curl -s -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"itemName": "ROG Ally X", "amount": 1}' | jq
+```
+
+The response body contains the new order's `id`. Save it for the next request.
+
+### Get an Order
+
+Replace `<order-id>` with the `id` from the create response:
+
+```sh
+curl -s http://localhost:8080/orders/<order-id> | jq
+```
+
+> **Note:** Order processing has an intentional ~2-second delay. If you fetch the order immediately after creating it, the status may still be `PENDING`.
+
+### Create and Fetch in One Step
+
+This command creates an order, captures the `id` with `jq`, and immediately fetches it:
+
+```sh
+ORDER_ID=$(curl -s -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"itemName": "ROG Ally X", "amount": 1}' | jq -r '.id') \
+&& sleep 3 \
+&& curl -s http://localhost:8080/orders/$ORDER_ID | jq
+```
+
+> `jq` must be installed (`brew install jq`). Without it, drop the `| jq` suffix — the raw JSON is still returned.
+
+## 🔬 Code Quality & Static Analysis
+
+This project uses SonarCloud for continuous inspection of code quality and security.
+
+### Local Analysis with SonarQube
+To run a full analysis on your local machine before committing, you can use the local SonarQube instance provided in the Docker Compose setup.
+
+**One-Time Setup:**
+1. **Start Docker:** Run `docker compose up -d` and wait for the `sonarqube` container to become operational.
+2. **Log in to SonarQube:** Open <http://localhost:9000>, log in with `admin`/`admin`, and change the password when prompted.
+3. **Generate a User Token:** Go to **My Account > Security** and generate a new token.
+4. **Create `sonar-project.local.properties`:** In the **root of the project**, create a new file named `sonar-project.local.properties`. This file is ignored by Git. Paste the following content into it, replacing `YOUR_LOCAL_SONAR_TOKEN_HERE` with the token you just generated:
+
+   ```properties
+   # Local-only SonarQube Configuration
+   # This file is ignored by Git and contains your local SonarQube server URL and token.
+   sonar.host.url=http://localhost:9000
+   sonar.login=YOUR_LOCAL_SONAR_TOKEN_HERE
+   ```
+
+**Running a Local Scan:**
+Once set up, you can run a local scan at any time with a single command from the project root:
+```sh
+npm run sonar:local
+```
+After the analysis is complete, you can view the full report at <http://localhost:9000>.
+
+### CI/CD Integration
+On every pull request, a GitHub Actions workflow automatically runs a SonarCloud scan and decorates the PR with the results, ensuring that all new code meets the defined quality gate.
 
 ## 🎣 Pre-Commit Hooks
 
@@ -151,3 +222,4 @@ Once the infrastructure is up and the application is running, you can access the
 - **Grafana:** <http://localhost:3000> (Login details are in `.env.example`)
 - **Zipkin Tracing:** <http://localhost:9411>
 - **PostgreSQL:** `localhost:5432` (Login details are in `.env.example`, DB: `orders_db`)
+- **SonarQube (Local):** <http://localhost:9000>

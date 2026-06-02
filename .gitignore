@@ -1,37 +1,39 @@
-.gradle
-.kotlin/
+# Gradle
+.gradle/
 build/
-
-### Artifacts ###
-*.jar
-*.war
-*.ear
-
-### IntelliJ IDEA ###
-.idea/
-*.iws
-*.iml
-*.ipr
-out/
-
-### OS ###
-.DS_Store
-
-### Logs ###
-*.log
-
-### Local Environment ###
-.env
-http-client.private.env.json
-.idea/httpRequests/
-
-### Test Databases ###
-pgdata/
-
-### Gradle Wrapper ###
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 !gradlew
 
-### Node.js ###
-docs/architecture/node_modules/
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Local Environment
+.env
+.env.*
+!.env.example
+http-client.private.env.json
+
+# Test Databases
+pgdata/
+
+# Node.js
+node_modules/
+
+# Sonar
+.sonar/
+.scannerwork/
+sonar-project.local.properties
+
+# Claude
+.claude

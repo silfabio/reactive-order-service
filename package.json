@@ -1,0 +1,8 @@
+{
+  "name": "reactive-order-service",
+  "version": "0.0.1-SNAPSHOT",
+  "private": true,
+  "scripts": {
+    "sonar:local": "bash scripts/sonar-local.sh"
+  }
+}
