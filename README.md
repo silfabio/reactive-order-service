@@ -64,6 +64,46 @@ docker compose up -d
 ### 3. Run the Application
 Start the Spring Boot service from your IDE.
 
+## 🧪 Testing the API
+
+The full request collection lives in `docs/http/orders.http`. Below are the equivalent `curl` commands for running them from the terminal.
+
+### Create an Order
+
+```sh
+curl -s -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"itemName": "ROG Ally X", "amount": 1}' | jq
+```
+
+The response body contains the new order's `id`. Save it for the next request.
+
+### Get an Order
+
+Replace `<order-id>` with the `id` from the create response:
+
+```sh
+curl -s http://localhost:8080/orders/<order-id> | jq
+```
+
+> **Note:** Order processing has an intentional ~2-second delay. If you fetch the order immediately after creating it, the status may still be `PENDING`.
+
+### Create and Fetch in One Step
+
+This command creates an order, captures the `id` with `jq`, and immediately fetches it:
+
+```sh
+ORDER_ID=$(curl -s -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"itemName": "ROG Ally X", "amount": 1}' | jq -r '.id') \
+&& sleep 3 \
+&& curl -s http://localhost:8080/orders/$ORDER_ID | jq
+```
+
+> `jq` must be installed (`brew install jq`). Without it, drop the `| jq` suffix — the raw JSON is still returned.
+
 ## 🔬 Code Quality & Static Analysis
 
 This project uses SonarCloud for continuous inspection of code quality and security.
@@ -75,7 +115,14 @@ To run a full analysis on your local machine before committing, you can use the 
 1. **Start Docker:** Run `docker compose up -d` and wait for the `sonarqube` container to become operational.
 2. **Log in to SonarQube:** Open <http://localhost:9000>, log in with `admin`/`admin`, and change the password when prompted.
 3. **Generate a User Token:** Go to **My Account > Security** and generate a new token.
-4. **Configure Local Properties:** Create a file named `sonar-project.properties` in the project root (this file is git-ignored). Copy the contents of `sonar-project.properties.example` into it and replace `YOUR_LOCAL_SONAR_TOKEN_HERE` with the token you just generated.
+4. **Create `sonar-project.local.properties`:** In the **root of the project**, create a new file named `sonar-project.local.properties`. This file is ignored by Git. Paste the following content into it, replacing `YOUR_LOCAL_SONAR_TOKEN_HERE` with the token you just generated:
+
+   ```properties
+   # Local-only SonarQube Configuration
+   # This file is ignored by Git and contains your local SonarQube server URL and token.
+   sonar.host.url=http://localhost:9000
+   sonar.login=YOUR_LOCAL_SONAR_TOKEN_HERE
+   ```
 
 **Running a Local Scan:**
 Once set up, you can run a local scan at any time with a single command from the project root:

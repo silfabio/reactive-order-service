@@ -32,4 +32,5 @@ node_modules/
 
 # Sonar
 .sonar/
-sonar-project.properties
+.scannerwork/
+sonar-project.local.properties
