@@ -2,6 +2,8 @@ package com.fabio.orderservice.service
 
 import com.fabio.orderservice.domain.Order
 import com.fabio.orderservice.domain.OrderRepository
+import io.github.resilience4j.reactor.retry.RetryOperator
+import io.github.resilience4j.retry.RetryRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.slf4j.LoggerFactory
@@ -15,15 +17,18 @@ class OrderService(
     private val orderRepository: OrderRepository,
     private val streamBridge: StreamBridge,
     private val meterRegistry: MeterRegistry,
+    private val retryRegistry: RetryRegistry,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val orderCreationTimer: Timer = meterRegistry.timer("orders.creation.duration")
+    private val retry = retryRegistry.retry("orderRepository")
 
     fun createOrder(order: Order): Mono<Order> {
         val orderWithId = order.copy(_id = UUID.randomUUID())
         val sample = Timer.start(meterRegistry)
 
-        return orderRepository.save(orderWithId)
+        return Mono.defer { orderRepository.save(orderWithId) }
+            .transformDeferred(RetryOperator.of(retry))
             .doOnSuccess {
                 sample.stop(orderCreationTimer)
             }

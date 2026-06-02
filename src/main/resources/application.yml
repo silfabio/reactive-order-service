@@ -51,3 +51,12 @@ management:
       show-details: always
       probes:
         enabled: true
+
+resilience4j:
+  retry:
+    instances:
+      orderRepository:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - io.r2dbc.spi.R2dbcTransientResourceException

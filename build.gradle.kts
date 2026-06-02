@@ -61,6 +61,10 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 
+    // Resilience4j
+    implementation("io.github.resilience4j:resilience4j-spring-boot3")
+    implementation("io.github.resilience4j:resilience4j-reactor")
+
     // R2DBC Proxy (for debugging/logging R2DBC queries)
     implementation("io.r2dbc:r2dbc-proxy")
 
