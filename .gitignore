@@ -34,3 +34,6 @@ node_modules/
 .sonar/
 .scannerwork/
 sonar-project.local.properties
+
+# Claude
+.claude
