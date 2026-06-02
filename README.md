@@ -157,7 +157,7 @@ Once installed, `pre-commit` will automatically run checks before each `git comm
 This project uses **Ktlint** to enforce consistent Kotlin code style.
 
 ### IDE Integration (Recommended)
-For the best developer experience, it is highly recommended to install the official **Ktlint plugin** in IntelliJ IDEA. This will provide real-time feedback and auto-formatting capabilities directly in the editor.
+For the best developer experience, it is highly recommended to install the official **Ktlint plugin** in IntelliJ IDEA. This will provide real-time feedback and autoformatting capabilities directly in the editor.
 
 ### Command-Line Usage
 You can also use the following Gradle tasks to manage code style from the command line:
@@ -169,7 +169,7 @@ You can also use the following Gradle tasks to manage code style from the comman
 
 This project uses Mermaid.js to maintain the architecture diagram as code. This ensures the documentation is version-controlled and easy to update.
 
-For detailed instructions on setup and rendering, see the [**Architecture README**](docs/architecture/README.md).
+For detailed instructions on setup and rendering, see the [**Architecture readme**](docs/architecture/README.md).
 
 ### Quick Render Command
 To update the diagram after making changes to the source file (`docs/architecture/architecture.mmd`), navigate to the architecture directory and run the rendering script:
