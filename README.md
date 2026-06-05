@@ -66,7 +66,7 @@ Complete request lifecycle for creating and retrieving an order, including the s
 This project serves as a strong foundation. The following features are planned for future iterations to evolve it into a fully production-grade microservice:
 
 - **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure on AWS using `Terraform` and test it locally with `Floci` (a LocalStack-based tool).
-- **🔒 Secret Management:** Externalize secrets (database credentials, API keys) from configuration files into `HashiCorp Vault`.
+- **🔐 Vault HA + PKI:** Provision a highly available HashiCorp Vault cluster (single region, multi-AZ on EC2, Raft storage) via Terraform, with AWS KMS for auto-unseal. Use Vault's PKI secrets engine to establish a two-tier CA hierarchy and issue short-lived client certificates for the Order Service, enabling mTLS authentication against PostgreSQL. Locally emulated via Floci.
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
 
 ## 🏁 Getting Started
