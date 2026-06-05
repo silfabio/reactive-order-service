@@ -7,6 +7,7 @@ import com.fabio.orderservice.exception.GlobalExceptionHandler
 import com.fabio.orderservice.service.OrderService
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -20,7 +21,7 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 @WebFluxTest(OrderController::class)
-@Import(GlobalExceptionHandler::class) // Import the custom exception handler into the test context
+@Import(GlobalExceptionHandler::class)
 class OrderControllerTest(
     private val webTestClient: WebTestClient,
     @MockkBean private val orderService: OrderService,
@@ -37,7 +38,6 @@ class OrderControllerTest(
 
         test("POST /orders should create a new order") {
             val createRequest = CreateOrderRequest(itemName = "New Item", amount = 5)
-            // The 'copy()' method will also use the '_id' parameter name internally.
             val createdOrder = sampleOrder.copy(itemName = createRequest.itemName, amount = createRequest.amount)
 
             every { orderService.createOrder(any()) } returns Mono.just(createdOrder)
@@ -56,21 +56,29 @@ class OrderControllerTest(
                 }
         }
 
-        test("POST /orders should return 400 with detailed error messages for invalid request") {
-            val invalidRequest = CreateOrderRequest(itemName = "", amount = 0) // Invalid: blank name, amount <= 0
-
-            webTestClient.post().uri("/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(invalidRequest)
-                .exchange()
-                .expectStatus().isBadRequest // Expecting 400 Bad Request due to @Valid
-                .expectBody<Map<String, Any>>()
-                .value { response ->
-                    response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
-                    val errors = response["errors"] as List<String>
-                    errors shouldContain "Item name must not be blank"
-                    errors shouldContain "Amount must be at least 1"
-                }
+        context("POST /orders should return 400 for invalid requests") {
+            withData(
+                mapOf(
+                    "blank item name" to
+                        (CreateOrderRequest(itemName = "", amount = 1) to listOf("Item name must not be blank")),
+                    "amount below minimum" to
+                        (CreateOrderRequest(itemName = "Valid Item", amount = 0) to listOf("Amount must be at least 1")),
+                    "blank item name and amount below minimum" to
+                        (CreateOrderRequest(itemName = "", amount = 0) to listOf("Item name must not be blank", "Amount must be at least 1")),
+                ),
+            ) { (request, expectedErrors) ->
+                webTestClient.post().uri("/orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .exchange()
+                    .expectStatus().isBadRequest
+                    .expectBody<Map<String, Any>>()
+                    .value { response ->
+                        response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
+                        val errors = response["errors"] as List<String>
+                        expectedErrors.forEach { errors shouldContain it }
+                    }
+            }
         }
 
         test("GET /orders/{id} should return an order if found") {
