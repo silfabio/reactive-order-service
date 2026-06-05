@@ -1,0 +1,55 @@
+%%{init: {'theme': 'default'}}%%
+sequenceDiagram
+    autonumber
+
+    actor Client
+    participant Controller as OrderController
+    participant Service as OrderService
+    participant Repository as OrderRepository
+    participant DB as PostgreSQL
+    participant Kafka
+    participant Processor as OrderProcessorConfiguration
+
+    rect rgba(173, 216, 230, 0.3)
+        Note over Client, Kafka: Create Order - POST /orders
+        Client->>+Controller: POST /orders (itemName, amount)
+        Controller->>+Service: createOrder(order)
+        Note over Service: Start Micrometer timer<br/>Apply Resilience4j RetryOperator
+        Service->>+Repository: save(order, status=PENDING)
+        Repository->>+DB: INSERT INTO orders
+        DB-->>-Repository: saved Order
+        Repository-->>-Service: Order
+        Note over Service: Stop Micrometer timer
+        Service->>Kafka: StreamBridge.send(order)
+        Note over Kafka: Published to<br/>order-events topic
+        Service-->>-Controller: Order
+        Controller-->>-Client: 201 Created + Order (status=PENDING)
+    end
+
+    rect rgba(255, 218, 185, 0.3)
+        Note over Kafka, Processor: Async Processing - Kafka Consumer
+        Kafka->>+Processor: order-events (status=PENDING)
+        Note over Processor: Check status == PENDING<br/>copy(status=PROCESSING)<br/>delay 2 seconds<br/>Apply Resilience4j RetryOperator
+        Processor->>+Repository: save(order, status=PROCESSING)
+        Repository->>+DB: UPDATE orders SET status=PROCESSING
+        DB-->>-Repository: updated Order
+        Repository-->>-Processor: Order
+        deactivate Processor
+    end
+
+    rect rgba(144, 238, 144, 0.3)
+        Note over Client, DB: Get Order - GET /orders/{id}
+        Client->>+Controller: GET /orders/{id}
+        Controller->>+Service: findById(id)
+        Service->>+Repository: findById(id)
+        Repository->>+DB: SELECT * FROM orders WHERE id=?
+        DB-->>-Repository: Order row
+        Repository-->>-Service: Order
+        Service-->>-Controller: Order
+        alt order found
+            Controller-->>Client: 200 OK + Order
+        else order not found
+            Controller-->>Client: 404 Not Found
+        end
+        deactivate Controller
+    end
