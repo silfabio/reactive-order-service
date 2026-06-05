@@ -42,11 +42,14 @@ class OrderControllerTest(
 
             every { orderService.createOrder(any()) } returns Mono.just(createdOrder)
 
-            webTestClient.post().uri("/orders")
+            webTestClient
+                .post()
+                .uri("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(createRequest)
                 .exchange()
-                .expectStatus().isCreated
+                .expectStatus()
+                .isCreated
                 .expectBody(Order::class.java)
                 .value {
                     it.id shouldBe createdOrder.id
@@ -58,24 +61,33 @@ class OrderControllerTest(
 
         context("POST /orders should return 400 for invalid requests") {
             withData(
+                @Suppress("ktlint:standard:max-line-length")
                 mapOf(
                     "blank item name" to
                         (CreateOrderRequest(itemName = "", amount = 1) to listOf("Item name must not be blank")),
                     "amount below minimum" to
                         (CreateOrderRequest(itemName = "Valid Item", amount = 0) to listOf("Amount must be at least 1")),
                     "blank item name and amount below minimum" to
-                        (CreateOrderRequest(itemName = "", amount = 0) to listOf("Item name must not be blank", "Amount must be at least 1")),
+                        (
+                            CreateOrderRequest(
+                                itemName = "",
+                                amount = 0,
+                            ) to listOf("Item name must not be blank", "Amount must be at least 1")
+                        ),
                 ),
             ) { (request, expectedErrors) ->
-                webTestClient.post().uri("/orders")
+                webTestClient
+                    .post()
+                    .uri("/orders")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(request)
                     .exchange()
-                    .expectStatus().isBadRequest
+                    .expectStatus()
+                    .isBadRequest
                     .expectBody<Map<String, Any>>()
                     .value { response ->
                         response["status"] shouldBe HttpStatus.BAD_REQUEST.value()
-                        val errors = response["errors"] as List<String>
+                        val errors = response["errors"] as List<*>
                         expectedErrors.forEach { errors shouldContain it }
                     }
             }
@@ -84,9 +96,12 @@ class OrderControllerTest(
         test("GET /orders/{id} should return an order if found") {
             every { orderService.findById(orderId) } returns Mono.just(sampleOrder)
 
-            webTestClient.get().uri("/orders/{id}", orderId)
+            webTestClient
+                .get()
+                .uri("/orders/{id}", orderId)
                 .exchange()
-                .expectStatus().isOk
+                .expectStatus()
+                .isOk
                 .expectBody(Order::class.java)
                 .value {
                     it.id shouldBe sampleOrder.id
@@ -97,9 +112,13 @@ class OrderControllerTest(
         test("GET /orders/{id} should return 404 if order not found") {
             every { orderService.findById(any()) } returns Mono.empty()
 
-            webTestClient.get().uri("/orders/{id}", UUID.randomUUID())
+            webTestClient
+                .get()
+                .uri("/orders/{id}", UUID.randomUUID())
                 .exchange()
-                .expectStatus().isNotFound
-                .expectBody().isEmpty
+                .expectStatus()
+                .isNotFound
+                .expectBody()
+                .isEmpty
         }
     })
