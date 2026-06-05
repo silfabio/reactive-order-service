@@ -15,11 +15,35 @@ A high-performance, non-blocking order management microservice built with Kotlin
 
 ## 🏛️ Architecture
 
-The architecture is designed to be cloud-native, with a clear separation between the local development environment and the production goal. The diagram below illustrates the current state, the local observability stack, and the future production environment on AWS.
+The architecture is designed to be cloud-native, with a clear separation between the local development environment and the production goal.
+
+### Architecture Overview
+
+High-level view of the system components across local development, IaC emulation, and the production AWS environment.
 
 <div align="center">
 
 ![Architecture Diagram](docs/architecture/architecture.png)
+
+</div>
+
+### Class Diagram
+
+Internal structure of the service: domain entities, the layered architecture (controller → service → repository), and the asynchronous Kafka consumer.
+
+<div align="center">
+
+![Class Diagram](docs/architecture/class-diagram.png)
+
+</div>
+
+### Sequence Diagram
+
+Complete request lifecycle for creating and retrieving an order, including the synchronous HTTP flow and the asynchronous Kafka consumer processing.
+
+<div align="center">
+
+![Sequence Diagram](docs/architecture/sequence-diagram.png)
 
 </div>
 
