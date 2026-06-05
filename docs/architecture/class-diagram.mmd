@@ -1,0 +1,69 @@
+%%{init: {'theme': 'default'}}%%
+classDiagram
+    direction TB
+
+    class CreateOrderRequest {
+        <<DTO>>
+        +itemName String
+        +amount Int
+    }
+
+    class GlobalExceptionHandler {
+        <<ControllerAdvice>>
+        +handleValidationErrors(ex) ResponseEntity
+    }
+
+    class OrderController {
+        <<RestController>>
+        -service OrderService
+        +createOrder(CreateOrderRequest) Mono~ResponseEntity~
+        +getOrder(UUID) Mono~ResponseEntity~
+    }
+
+    class OrderService {
+        <<Service>>
+        -orderRepository OrderRepository
+        -streamBridge StreamBridge
+        -meterRegistry MeterRegistry
+        -retryRegistry RetryRegistry
+        +createOrder(Order) Mono~Order~
+        +findById(UUID) Mono~Order~
+    }
+
+    class OrderProcessorConfiguration {
+        <<Configuration>>
+        -repository OrderRepository
+        -retryRegistry RetryRegistry
+        +processOrder() Consumer~Order~
+    }
+
+    class OrderRepository {
+        <<Repository>>
+        +save(Order) Mono~Order~
+        +findById(UUID) Mono~Order~
+    }
+
+    class Order {
+        <<Entity>>
+        +_id UUID
+        +itemName String
+        +amount Int
+        +status OrderStatus
+        +isNew() Boolean
+    }
+
+    class OrderStatus {
+        <<enumeration>>
+        PENDING
+        PROCESSING
+        COMPLETED
+        FAILED
+    }
+
+    OrderController --> OrderService : uses
+    OrderController ..> CreateOrderRequest : accepts
+    OrderService --> OrderRepository : persists and queries
+    OrderProcessorConfiguration --> OrderRepository : updates status
+    Order --> OrderStatus : has
+    CreateOrderRequest ..> Order : maps to
+    GlobalExceptionHandler ..> OrderController : handles errors for

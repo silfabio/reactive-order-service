@@ -5,7 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "render": "mmdc -i architecture.mmd -o architecture.png -p puppeteer-config.json -w 1200"
+    "render": "mmdc -i architecture.mmd -o architecture.png -p puppeteer-config.json -w 1200",
+    "render:class": "mmdc -i class-diagram.mmd -o class-diagram.png -p puppeteer-config.json -w 1200",
+    "render:sequence": "mmdc -i sequence-diagram.mmd -o sequence-diagram.png -p puppeteer-config.json -w 1600",
+    "render:all": "npm run render && npm run render:class && npm run render:sequence"
   },
   "keywords": [],
   "author": "",

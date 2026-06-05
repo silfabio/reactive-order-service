@@ -1,12 +1,34 @@
-# Architecture Diagram
+# Architecture Diagrams
 
-This directory contains the source code (`architecture.mmd`) and rendering tools for the project's architecture diagram.
+This directory contains the Mermaid source files and rendering tools for the project's architecture diagrams. All diagrams are authored using Mermaid.js syntax and rendered to PNG using the official `@mermaid-js/mermaid-cli` tool.
 
-The diagram is authored using Mermaid.js syntax. The final PNG image is generated using the official `@mermaid-js/mermaid-cli` tool to ensure consistent rendering.
+## Architecture Overview
+
+High-level view of the system components across local development, IaC emulation, and the production AWS environment.
 
 <div align="center">
 
 ![Architecture Diagram](architecture.png)
+
+</div>
+
+## Class Diagram
+
+Internal structure of the service: domain entities, the layered architecture (controller → service → repository), and the asynchronous Kafka consumer.
+
+<div align="center">
+
+![Class Diagram](class-diagram.png)
+
+</div>
+
+## Sequence Diagram
+
+Complete request lifecycle for creating and retrieving an order, including the synchronous HTTP flow and the asynchronous Kafka consumer processing.
+
+<div align="center">
+
+![Sequence Diagram](sequence-diagram.png)
 
 </div>
 
@@ -16,25 +38,35 @@ The diagram is authored using Mermaid.js syntax. The final PNG image is generate
 
 ## Setup
 
-To install the necessary dependencies for rendering the diagram, navigate to this directory and run `npm install`.
+To install the necessary dependencies, navigate to this directory and run:
 
 ```sh
 cd docs/architecture
 npm install
 ```
 
-This will create a local `node_modules` directory inside `docs/architecture/` with the required packages.
+## Rendering the Diagrams
 
-## Rendering the Diagram
-
-To generate or update the `architecture.png` file from the `architecture.mmd` source, run the rendering script from within this directory:
+To regenerate all PNG files from their `.mmd` sources:
 
 ```sh
-npm run render
+npm run render:all
 ```
 
-This command will launch a headless browser, render the diagram, and save the output to `architecture.png`.
+Or render a specific diagram:
 
-## Modifying the Diagram
+```sh
+npm run render          # Architecture overview
+npm run render:class    # Class diagram
+npm run render:sequence # Sequence diagram
+```
 
-To make changes, edit the `architecture.mmd` file. The `architecture.png` file is a generated artifact and should not be edited directly. After modifying the `.mmd` file, run the rendering script again to regenerate the image.
+## Modifying the Diagrams
+
+Edit the relevant `.mmd` source file. The `.png` files are generated artifacts and must not be edited directly. After modifying a `.mmd` file, run the corresponding render script to regenerate the image.
+
+| Source | Command | Output |
+|:---|:---|:---|
+| `architecture.mmd` | `npm run render` | `architecture.png` |
+| `class-diagram.mmd` | `npm run render:class` | `class-diagram.png` |
+| `sequence-diagram.mmd` | `npm run render:sequence` | `sequence-diagram.png` |
