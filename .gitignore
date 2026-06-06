@@ -37,3 +37,12 @@ sonar-project.local.properties
 
 # Claude
 .claude
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.backup
+infra/terraform/terraform.tfstate.*.backup
+infra/terraform/terraform.prod.tfvars
+infra/terraform/.env.floci

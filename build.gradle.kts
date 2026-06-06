@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     kotlin("jvm") version "1.9.24"
@@ -136,4 +137,18 @@ configurations.all {
             useVersion("1.26.1")
         }
     }
+}
+
+tasks.named<BootRun>("bootRun") {
+    listOf(".env", "infra/terraform/.env.floci")
+        .map { rootProject.file(it) }
+        .filter { it.exists() }
+        .flatMap { envFile ->
+            envFile
+                .readLines()
+                .filter { line -> line.isNotBlank() && !line.startsWith("#") && line.contains("=") }
+                .map { line -> line.split("=", limit = 2) }
+                .filter { parts -> parts.size == 2 }
+                .map { parts -> parts[0].trim() to parts[1].trim() }
+        }.forEach { (key, value) -> environment(key, value) }
 }
