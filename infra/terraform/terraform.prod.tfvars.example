@@ -1,0 +1,32 @@
+# Production AWS configuration template
+# Copy to terraform.prod.tfvars, fill in values, and keep it out of Git
+# (terraform.prod.tfvars is listed in .gitignore)
+#
+# NOTE: In production, db_password will be rotated by Vault PKI/KMS.
+# Treat this file as a bootstrap-only reference.
+
+floci_endpoint = ""
+environment    = "prod"
+aws_region     = "us-east-1"
+
+# Networking
+availability_zones   = ["us-east-1a", "us-east-1b"]
+create_nat_gateway   = true
+
+# RDS
+db_name                = "orders_db"
+db_username            = "CHANGE_ME"
+db_password            = "CHANGE_ME_USE_STRONG_PASSWORD"
+db_instance_class      = "db.t3.small"
+db_allocated_storage   = 100
+db_multi_az            = true
+db_skip_final_snapshot = false
+
+# MSK
+create_msk = true
+
+# MSK instance config
+kafka_version       = "3.6.0"
+kafka_broker_nodes  = 2
+kafka_instance_type = "kafka.m5.large"
+kafka_volume_size   = 100

@@ -63,28 +63,61 @@ Complete request lifecycle for creating and retrieving an order, including the s
 
 ## 🗺️ Roadmap & Future Enhancements
 
-This project serves as a strong foundation. The following features are planned for future iterations to evolve it into a fully production-grade microservice:
+This project serves as a strong foundation. The following features are planned for future iterations:
 
-- **☁️ Infrastructure as Code (IaC):** Manage cloud infrastructure on AWS using `Terraform` and test it locally with `Floci` (a LocalStack-based tool).
 - **🔐 Vault HA + PKI:** Provision a highly available HashiCorp Vault cluster (single region, multi-AZ on EC2, Raft storage) via Terraform, with AWS KMS for auto-unseal. Use Vault's PKI secrets engine to establish a two-tier CA hierarchy and issue short-lived client certificates for the Order Service, enabling mTLS authentication against PostgreSQL. Locally emulated via Floci.
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
+- **🗄️ Floci MSK emulation:** Run Kafka locally through Terraform + Floci (the same code path used in production) once the upstream Floci bug is resolved — see the note below.
+
+
+## 🏗️ Local Infrastructure (Terraform + Floci)
+
+All infrastructure is defined as code using Terraform. In production every resource runs on AWS. Locally, [Floci](https://github.com/floci-io/floci) — a free, MIT-licensed AWS emulator — is used where supported; Docker Compose fills the gaps where Floci has known limitations.
+
+### Local vs Production
+
+| Service | Local | Production |
+|:---|:---|:---|
+| **VPC / Networking** | Terraform + Floci | Terraform + AWS |
+| **PostgreSQL** | Terraform + Floci (`aws_db_instance`, `create_db_subnet_group = false`) | Terraform + AWS RDS |
+| **Kafka** | Docker Compose (`apache/kafka`, `localhost:9092`) | Terraform + AWS MSK |
+
+### Why Docker for Kafka locally?
+
+Floci 1.5.22 has a known bug: when `aws_msk_cluster` is provisioned, Floci starts the backing Redpanda container but its internal state machine never transitions the cluster from `CREATING` to `ACTIVE`. The Terraform AWS provider polls for `ACTIVE` before completing, so the apply hangs indefinitely and eventually times out. Until this is fixed upstream, `create_msk = false` is set in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK Terraform module (`infra/terraform/modules/msk`) is fully defined and is used in production without changes.
+
+### Prerequisites
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.10.0
+- Docker (already required above)
+
+> All infrastructure is managed automatically by `make dev`. See [infra/terraform/README.md](infra/terraform/README.md) for the full Terraform reference, module docs, and production deployment guide.
 
 ## 🏁 Getting Started
 
 ### 1. Prerequisites
 - **Java 21** (Required for the JVM Toolchain)
 - **Docker & Docker Compose**
+- **Terraform >= 1.10.0** ([install](https://developer.hashicorp.com/terraform/install))
 - **Node.js & npm** (For running local scripts)
 
-### 2. Start Infrastructure
-Spin up PostgreSQL, Kafka, and the full observability stack (including SonarQube):
+### 2. Start Infrastructure and Run
+A single command starts Docker Desktop (if needed), all Docker Compose services (Floci, Kafka, observability), provisions VPC/networking and PostgreSQL via Terraform + Floci, and boots the application:
 
 ```sh
-docker compose up -d
+make dev
 ```
 
+To stop and tear down the infrastructure:
+
+```sh
+make dev-down
+```
+
+> See [scripts/dev-up.sh](scripts/dev-up.sh) for what the setup script does step by step, and [infra/terraform/README.md](infra/terraform/README.md) for the full Terraform reference.
+
 ### 3. Run the Application
-Start the Spring Boot service from your IDE.
+When running from your IDE instead of the terminal, run `./scripts/dev-up.sh` once first (sets up the infrastructure and writes connection details to `infra/terraform/.env.floci`), then start the application normally — the `bootRun` Gradle task reads that file automatically.
 
 ## 🧪 Testing the API
 
@@ -209,12 +242,14 @@ npm run render
 
 | Action | Command |
 | :--- | :--- |
-| Start all services (detached) | `docker compose up -d` |
-| Stop all services | `docker compose stop` |
+| Start environment and run app | `make dev` |
+| Tear down environment | `make dev-down` |
+| Start observability stack only | `docker compose up -d` |
+| Stop observability stack | `docker compose stop` |
 | Stop and remove containers | `docker compose down` |
 | Full Reset (Clean volumes) | `docker compose down -v --remove-orphans` |
-| View Infrastructure Logs | `docker compose logs -f` |
-| View specific service logs | `docker compose logs -f kafka` |
+| View service logs | `docker compose logs -f` |
+| View specific service logs | `docker compose logs -f floci` |
 
 ### Application Development
 | Action | Command |
@@ -228,7 +263,7 @@ npm run render
 ### Troubleshooting
 If the application fails to connect to Kafka or Postgres on first boot:
 1. Ensure containers are healthy: `docker compose ps`
-2. Check for port conflicts (5432, 9092, 8080)
+2. Check for port conflicts on: `4566` (Floci API), `7001` (Floci RDS proxy), `9092` (Kafka), `8080` (app)
 3. Verify the "Service Connection" labels in `docker-compose.yml`
 
 ## 🌐 Local Services & Dashboards
@@ -243,5 +278,13 @@ Once the infrastructure is up and the application is running, you can access the
 - **Prometheus Targets:** <http://localhost:9090/targets>
 - **Grafana:** <http://localhost:3000> (Login details are in `.env.example`)
 - **Zipkin Tracing:** <http://localhost:9411>
-- **PostgreSQL:** `localhost:5432` (Login details are in `.env.example`, DB: `orders_db`)
 - **SonarQube (Local):** <http://localhost:9000>
+- **Floci (AWS emulator):** <http://localhost:4566>
+
+### Connecting to the Local PostgreSQL Database
+
+PostgreSQL is provisioned via Terraform + Floci (`aws_db_instance`). After `make dev`, connection details are written to `infra/terraform/.env.floci`:
+
+```sh
+source infra/terraform/.env.floci && psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d orders_db
+```
