@@ -9,7 +9,7 @@ a free MIT-licensed local AWS emulator.
 
 ## Structure
 
-```
+```text
 infra/terraform/
 ├── versions.tf                    # Terraform + provider version constraints
 ├── providers.tf                   # AWS provider — auto-switches between Floci and real AWS

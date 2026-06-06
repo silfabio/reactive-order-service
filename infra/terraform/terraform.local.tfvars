@@ -5,13 +5,13 @@ environment    = "local"
 aws_region     = "us-east-1"
 
 # Networking
-availability_zones   = ["us-east-1a"]
-create_nat_gateway   = false
+availability_zones = ["us-east-1a"]
+create_nat_gateway = false
 
 # RDS
 # db_username and db_password are NOT stored here — they are injected from
 # your .env file as TF_VAR_db_username and TF_VAR_db_password by dev-up.sh
-db_name = "orders_db"
+db_name                = "orders_db"
 db_instance_class      = "db.t3.micro"
 db_allocated_storage   = 20
 db_multi_az            = false

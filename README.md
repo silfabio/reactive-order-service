@@ -69,7 +69,6 @@ This project serves as a strong foundation. The following features are planned f
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
 - **🗄️ Floci MSK emulation:** Run Kafka locally through Terraform + Floci (the same code path used in production) once the upstream Floci bug is resolved — see the note below.
 
-
 ## 🏗️ Local Infrastructure (Terraform + Floci)
 
 All infrastructure is defined as code using Terraform. In production every resource runs on AWS. Locally, [Floci](https://github.com/floci-io/floci) — a free, MIT-licensed AWS emulator — is used where supported; Docker Compose fills the gaps where Floci has known limitations.
@@ -84,7 +83,12 @@ All infrastructure is defined as code using Terraform. In production every resou
 
 ### Why Docker for Kafka locally?
 
-Floci 1.5.22 has a known bug: when `aws_msk_cluster` is provisioned, Floci starts the backing Redpanda container but its internal state machine never transitions the cluster from `CREATING` to `ACTIVE`. The Terraform AWS provider polls for `ACTIVE` before completing, so the apply hangs indefinitely and eventually times out. Until this is fixed upstream, `create_msk = false` is set in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK Terraform module (`infra/terraform/modules/msk`) is fully defined and is used in production without changes.
+Floci 1.5.22 has a known bug: when `aws_msk_cluster` is provisioned, Floci starts the backing
+Redpanda container but its internal state machine never transitions the cluster from `CREATING` to
+`ACTIVE`. The Terraform AWS provider polls for `ACTIVE` before completing, so the apply hangs
+indefinitely and eventually times out. Until this is fixed upstream, `create_msk = false` is set
+in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK Terraform module
+(`infra/terraform/modules/msk`) is fully defined and is used in production without changes.
 
 ### Prerequisites
 

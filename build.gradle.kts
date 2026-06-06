@@ -140,17 +140,15 @@ configurations.all {
 }
 
 tasks.named<BootRun>("bootRun") {
-    // Load .env and terraform/.env.floci so the app connects to Floci-provisioned resources
     listOf(".env", "infra/terraform/.env.floci")
         .map { rootProject.file(it) }
         .filter { it.exists() }
-        .flatMap { file ->
-            file.readLines()
-                .filter { line -> line.isNotBlank() && !line.startsWith("#") && "=" in line }
-                .mapNotNull { line ->
-                    val parts = line.split("=", limit = 2)
-                    if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
-                }
-        }
-        .forEach { (key, value) -> environment(key, value) }
+        .flatMap { envFile ->
+            envFile
+                .readLines()
+                .filter { line -> line.isNotBlank() && !line.startsWith("#") && line.contains("=") }
+                .map { line -> line.split("=", limit = 2) }
+                .filter { parts -> parts.size == 2 }
+                .map { parts -> parts[0].trim() to parts[1].trim() }
+        }.forEach { (key, value) -> environment(key, value) }
 }

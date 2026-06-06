@@ -85,6 +85,7 @@ resource "aws_db_instance" "main" {
   #checkov:skip=CKV_AWS_161: IAM authentication planned as part of the Vault mTLS roadmap
   #checkov:skip=CKV_AWS_354: Performance Insights KMS CMK deferred until the KMS/Vault module is added
   #checkov:skip=CKV_AWS_118: Enhanced monitoring IAM role not available in Floci; enabled in production via aws_iam_role.rds_monitoring
+  #ts:skip=AC_AWS_0053 IAM authentication planned as part of the Vault mTLS roadmap
 
   identifier     = "${var.project_name}-${var.environment}-postgres"
   engine         = "postgres"
