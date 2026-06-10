@@ -46,3 +46,28 @@ module "msk" {
   volume_size            = var.kafka_volume_size
   cluster_create_timeout = var.kafka_cluster_create_timeout
 }
+
+module "kms" {
+  source = "./modules/kms"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
+
+module "vault" {
+  count  = var.create_vault ? 1 : 0
+  source = "./modules/vault"
+
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  app_security_group_id = module.vpc.app_security_group_id
+  kms_key_id            = module.kms.key_id
+  aws_region            = var.aws_region
+
+  instance_type = var.vault_instance_type
+  node_count    = var.vault_node_count
+  ami_id        = var.vault_ami_id
+  vault_version = var.vault_version
+}

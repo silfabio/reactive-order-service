@@ -21,7 +21,9 @@ infra/terraform/
 └── modules/
     ├── vpc/    # VPC, subnets (multi-AZ), IGW, optional NAT gateway, security groups
     ├── rds/    # RDS PostgreSQL with subnet group and security group
-    └── msk/    # MSK Kafka cluster with security group
+    ├── msk/    # MSK Kafka cluster with security group
+    ├── kms/    # KMS key + alias for Vault auto-unseal (always created)
+    └── vault/  # Vault HA cluster: Raft ASG, security group, IAM instance profile
 ```
 
 ## What `make dev` does
@@ -32,7 +34,7 @@ infra/terraform/
 2. `docker compose up -d` — starts Floci and the observability stack
 3. Waits for Floci to pass its health check at `http://localhost:4566/_floci/health`
 4. `terraform init` — only on first run or when `.terraform/` is missing
-5. `terraform apply -var-file=terraform.local.tfvars -auto-approve` — provisions VPC, RDS, MSK via Floci
+5. `terraform apply -var-file=terraform.local.tfvars -auto-approve` — provisions VPC, RDS, MSK, and the Vault KMS key via Floci
 6. Writes `DB_HOST`, `DB_PORT`, `KAFKA_BOOTSTRAP_SERVERS` to `infra/terraform/.env.floci`
 7. Starts the application via `./gradlew bootRun`, which reads `.env` and `.env.floci` automatically
 
@@ -117,3 +119,30 @@ Outputs: `rds_endpoint`, `rds_address`, `rds_port`, `rds_database_name`
 | `kafka_instance_type` | `kafka.t3.small` | Broker instance type (`kafka.m5.large` for prod) |
 
 Outputs: `msk_bootstrap_brokers`, `msk_cluster_arn`
+
+### kms
+
+Always created (not gated by a toggle). Provisions the KMS key used by Vault's
+`seal "awskms"` auto-unseal stanza.
+
+Outputs: `vault_kms_key_id`, `vault_kms_key_arn`
+
+### vault
+
+| Variable | Default | Description |
+|:---|:---|:---|
+| `create_vault` | `false` | Provision the Vault HA cluster (set `true` for prod) |
+| `vault_instance_type` | `t3.micro` | Vault node instance type (`t3.small` for prod) |
+| `vault_node_count` | `3` | Number of nodes in the Raft cluster |
+| `vault_ami_id` | Floci placeholder AMI | Real AMI ID for the target region in production |
+| `vault_version` | `1.18.1` | Vault version installed via `user_data` |
+
+`create_vault` defaults to `false` locally: Floci EC2 instances launched by an
+Auto Scaling Group aren't reachable from the host, and ASG tags aren't
+propagated to instances, so Raft `retry_join` auto-discovery wouldn't find
+peers anyway — the same reason `create_msk` defaults to `false`. The KMS key
+itself (above) is still created locally, ready for a future local Vault
+container's auto-unseal.
+
+Outputs: `vault_security_group_id`, `vault_asg_name` (empty when
+`create_vault = false`)

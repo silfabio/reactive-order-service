@@ -149,3 +149,35 @@ variable "kafka_cluster_create_timeout" {
   type        = string
   default     = "60m"
 }
+
+# ── Vault ────────────────────────────────────────────────────────────────────
+
+variable "create_vault" {
+  description = "Provision a Vault HA cluster (ASG of EC2 nodes + IAM) via Floci locally, or real AWS in production. The KMS auto-unseal key is always created."
+  type        = bool
+  default     = false
+}
+
+variable "vault_instance_type" {
+  description = "EC2 instance type for Vault nodes"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "vault_node_count" {
+  description = "Number of Vault nodes in the Raft cluster (odd number, 3 for HA)"
+  type        = number
+  default     = 3
+}
+
+variable "vault_ami_id" {
+  description = "AMI ID for Vault nodes. Default matches Floci's pre-seeded Amazon Linux 2023 placeholder image; override with a real AMI ID for the target region in production."
+  type        = string
+  default     = "ami-0abcdef1234567891"
+}
+
+variable "vault_version" {
+  description = "HashiCorp Vault version installed via user_data"
+  type        = string
+  default     = "1.18.1"
+}
