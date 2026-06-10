@@ -4,14 +4,14 @@ set -eu
 # Install Vault (Amazon Linux 2023 / RHEL-family)
 dnf install -y dnf-plugins-core
 dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-dnf install -y vault-${vault_version}-1
+# shellcheck disable=SC2154 # vault_version is a Terraform templatefile() variable, not a shell variable
+dnf install -y vault-"${vault_version}"-1
 
 mkdir -p /opt/vault/data
 chown -R vault:vault /opt/vault/data
 
-PRIVATE_IP="$(hostname -i)"
-
-cat > /etc/vault.d/vault.hcl <<EOF
+# shellcheck disable=SC2154 # aws_region, cluster_tag_key, cluster_tag_value, kms_key_id are Terraform templatefile() variables
+cat >/etc/vault.d/vault.hcl <<EOF
 storage "raft" {
   path    = "/opt/vault/data"
   node_id = "$(hostname)"
@@ -33,8 +33,8 @@ seal "awskms" {
   kms_key_id = "${kms_key_id}"
 }
 
-api_addr     = "http://$${PRIVATE_IP}:8200"
-cluster_addr = "http://$${PRIVATE_IP}:8201"
+api_addr     = "http://$$(hostname -i):8200"
+cluster_addr = "http://$$(hostname -i):8201"
 ui           = true
 EOF
 

@@ -130,7 +130,7 @@ resource "aws_launch_template" "vault" {
     resource_type = "instance"
 
     tags = merge(local.tags, {
-      Name                  = "${var.project_name}-${var.environment}-vault"
+      Name                    = "${var.project_name}-${var.environment}-vault"
       (local.cluster_tag_key) = local.cluster_tag_value
     })
   }
