@@ -29,3 +29,12 @@ kafka_version       = "3.6.0"
 kafka_broker_nodes  = 1
 kafka_instance_type = "kafka.t3.small"
 kafka_volume_size   = 20
+
+# Vault — the KMS auto-unseal key is always created; the HA cluster (ASG/EC2)
+# is disabled locally because Floci EC2 instances aren't reachable from the
+# host and ASG tags aren't propagated for retry_join discovery
+create_vault = false
+
+# Vault HA cluster config (used when create_vault = true)
+vault_instance_type = "t3.micro"
+vault_node_count    = 3

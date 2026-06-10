@@ -26,6 +26,10 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           VALIDATE_JSCPD: false
+          # *.tpl files are Terraform templates (rendered via templatefile()), not
+          # standalone scripts — their ${...} interpolation syntax trips up the
+          # shellcheck/shfmt versions bundled with super-linter.
+          FILTER_REGEX_EXCLUDE: .*\.tpl$
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: TruffleHog Secret Scan

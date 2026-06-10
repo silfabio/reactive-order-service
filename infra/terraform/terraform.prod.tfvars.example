@@ -30,3 +30,10 @@ kafka_version       = "3.6.0"
 kafka_broker_nodes  = 2
 kafka_instance_type = "kafka.m5.large"
 kafka_volume_size   = 100
+
+# Vault HA
+create_vault        = true
+vault_instance_type = "t3.small"
+vault_node_count    = 3
+vault_ami_id        = "CHANGE_ME" # real AMI ID for the target region (e.g. Amazon Linux 2023)
+vault_version       = "1.18.1"

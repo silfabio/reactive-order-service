@@ -37,3 +37,23 @@ output "msk_cluster_arn" {
   description = "MSK cluster ARN (empty when create_msk = false)"
   value       = var.create_msk ? module.msk[0].cluster_arn : ""
 }
+
+output "vault_kms_key_id" {
+  description = "KMS key ID used for Vault auto-unseal (always created)"
+  value       = module.kms.key_id
+}
+
+output "vault_kms_key_arn" {
+  description = "KMS key ARN used for Vault auto-unseal (always created)"
+  value       = module.kms.key_arn
+}
+
+output "vault_security_group_id" {
+  description = "Security group ID for the Vault HA cluster (empty when create_vault = false)"
+  value       = var.create_vault ? module.vault[0].security_group_id : ""
+}
+
+output "vault_asg_name" {
+  description = "Auto Scaling Group name for the Vault HA cluster (empty when create_vault = false)"
+  value       = var.create_vault ? module.vault[0].asg_name : ""
+}
