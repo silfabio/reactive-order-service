@@ -65,7 +65,6 @@ Complete request lifecycle for creating and retrieving an order, including the s
 
 This project serves as a strong foundation. The following features are planned for future iterations:
 
-- **🔐 Vault HA + PKI:** Provision a highly available HashiCorp Vault cluster (single region, multi-AZ on EC2, Raft storage) via Terraform, with AWS KMS for auto-unseal. Use Vault's PKI secrets engine to establish a two-tier CA hierarchy and issue short-lived client certificates for the Order Service, enabling mTLS authentication against PostgreSQL. Locally emulated via Floci.
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
 - **🗄️ Floci MSK emulation:** Run Kafka locally through Terraform + Floci (the same code path used in production) once the upstream Floci bug is resolved — see the note below.
 
@@ -78,8 +77,13 @@ All infrastructure is defined as code using Terraform. In production every resou
 | Service | Local | Production |
 |:---|:---|:---|
 | **VPC / Networking** | Terraform + Floci | Terraform + AWS |
-| **PostgreSQL** | Terraform + Floci (`aws_db_instance`, `create_db_subnet_group = false`) | Terraform + AWS RDS |
+| **PostgreSQL** | Docker Compose (`postgres:16`, mTLS via Vault PKI) | Terraform + AWS RDS |
 | **Kafka** | Docker Compose (`apache/kafka`, `localhost:9092`) | Terraform + AWS MSK |
+| **Vault PKI** | Docker Compose (`hashicorp/vault`, dev mode) + Terraform `vault-pki` module | Terraform `vault-pki` module against the Vault HA cluster |
+
+> Run `make dev-iac` to additionally provision RDS via Floci/Terraform for IaC validation
+> (Terraform-only — the app is not started) — see
+> [Validating the RDS Terraform module](#validating-the-rds-terraform-module-make-dev-iac) below.
 
 ### Why Docker for Kafka locally?
 
@@ -88,7 +92,21 @@ Redpanda container but its internal state machine never transitions the cluster 
 `ACTIVE`. The Terraform AWS provider polls for `ACTIVE` before completing, so the apply hangs
 indefinitely and eventually times out. Until this is fixed upstream, `create_msk = false` is set
 in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK Terraform module
-(`infra/terraform/modules/msk`) is fully defined and is used in production without changes.
+(`infra/terraform/modules/msk`) is fully defined and is used in production without changes. For the
+same reason, `make dev-iac` does **not** set `create_msk = true` — validating the `msk` module
+against Floci remains a manual, expect-it-to-hang exercise until the upstream fix lands.
+
+### Why Docker for Postgres locally?
+
+Floci's RDS emulation rejects the client's `SSLRequest` outright (it needs to read the Postgres
+wire protocol in cleartext to emulate IAM/master-password auth) — it doesn't support TLS at all,
+let alone mTLS. Same root cause as the MSK limitation above. `create_rds = false` is set in
+`terraform.local.tfvars` and Postgres runs as a Docker container with real TLS, enabling the full
+Vault PKI mTLS flow described below. The RDS Terraform module (`infra/terraform/modules/rds`) is
+fully defined and is used in production without changes; run `make dev-iac` to provision it against
+Floci for IaC validation — see
+[Validating the RDS Terraform module](#validating-the-rds-terraform-module-make-dev-iac) for the
+full walkthrough, including why the app isn't started in that mode.
 
 ### Prerequisites
 
@@ -106,7 +124,7 @@ in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK 
 - **Node.js & npm** (For running local scripts)
 
 ### 2. Start Infrastructure and Run
-A single command starts Docker Desktop (if needed), all Docker Compose services (Floci, Kafka, observability), provisions VPC/networking and PostgreSQL via Terraform + Floci, and boots the application:
+A single command starts Docker Desktop (if needed), all Docker Compose services (Floci, Kafka, Postgres, Vault, observability), provisions VPC/networking via Terraform + Floci and the Vault PKI two-tier CA via Terraform + Vault, and boots the application:
 
 ```sh
 make dev
@@ -247,6 +265,7 @@ npm run render
 | Action | Command |
 | :--- | :--- |
 | Start environment and run app | `make dev` |
+| Provision RDS via Floci for Terraform validation (app not started) | `make dev-iac` |
 | Tear down environment | `make dev-down` |
 | Start observability stack only | `docker compose up -d` |
 | Stop observability stack | `docker compose stop` |
@@ -265,10 +284,13 @@ npm run render
 | Clean Build Assets | `./gradlew clean` |
 
 ### Troubleshooting
-If the application fails to connect to Kafka or Postgres on first boot:
+If the application fails to connect to Kafka, Postgres, or Vault on first boot:
 1. Ensure containers are healthy: `docker compose ps`
-2. Check for port conflicts on: `4566` (Floci API), `7001` (Floci RDS proxy), `9092` (Kafka), `8080` (app)
+2. Check for port conflicts on: `4566` (Floci API), `7001` (Floci RDS proxy), `9092` (Kafka), `5432` (Postgres), `8200` (Vault), `8080` (app)
 3. Verify the "Service Connection" labels in `docker-compose.yml`
+4. For Postgres/Vault PKI/mTLS issues specifically, see
+   [Troubleshooting Vault & AppRole authentication](#troubleshooting-vault--approle-authentication)
+   and [Verifying the mTLS flow](#verifying-the-mtls-flow)
 
 ## 🌐 Local Services & Dashboards
 
@@ -284,11 +306,233 @@ Once the infrastructure is up and the application is running, you can access the
 - **Zipkin Tracing:** <http://localhost:9411>
 - **SonarQube (Local):** <http://localhost:9000>
 - **Floci (AWS emulator):** <http://localhost:4566>
+- **Vault (dev mode):** <http://localhost:8200> (root token: `root` — see [Local Postgres + Vault PKI mTLS](#-local-postgres--vault-pki-mtls))
 
 ### Connecting to the Local PostgreSQL Database
 
-PostgreSQL is provisioned via Terraform + Floci (`aws_db_instance`). After `make dev`, connection details are written to `infra/terraform/.env.floci`:
+PostgreSQL runs in Docker Compose with TLS enabled. After `make dev`, connection details are
+written to `infra/terraform/.env.floci`:
 
 ```sh
-source infra/terraform/.env.floci && psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d orders_db
+source infra/terraform/.env.floci && psql "host=$DB_HOST port=$DB_PORT dbname=orders_db user=$DB_USER password=$DB_PASSWORD sslmode=require"
 ```
+
+This connects as `DB_USER` (password auth — the role Flyway uses for migrations). The application
+itself connects as the `order_service` role, authenticated via the short-lived mTLS client
+certificate issued by Vault PKI (see below) — there's no password for that role.
+
+## 🔐 Local Postgres + Vault PKI mTLS
+
+`make dev` runs the full mTLS flow end-to-end, locally:
+
+1. A dev-mode Vault container (`hashicorp/vault`, in-memory, root token `root`) starts alongside
+   the other Docker Compose services.
+2. Terraform's `vault-pki` module (`infra/terraform/modules/vault-pki`) provisions a two-tier CA
+   in that Vault — a root CA (`pki-root`) and an intermediate CA (`pki-int`) signed by it — then
+   issues a TLS server certificate for Postgres (written to `.certs/`, gitignored) and creates an
+   AppRole the application uses to fetch its own client certificate.
+3. The Postgres container starts with that server certificate, `ssl = on`, and `pg_hba.conf`
+   rules requiring TLS for every connection (`infra/postgres/`).
+4. On startup, the application logs in to Vault via AppRole (credentials from
+   `infra/terraform/.env.floci`) and requests a short-lived client certificate
+   (CN `order-service.client`, ~24h TTL) from `pki-int`. It's written to a temp directory and used
+   to open an mTLS connection to Postgres as the `order_service` role —
+   `infra/postgres/pg_ident.conf` maps that certificate CN to the role. The certificate is renewed
+   automatically before it expires.
+5. Flyway migrations still run as `DB_USER` over a regular (encrypted, non-mTLS) TLS connection —
+   only the application's runtime connection uses client-certificate auth.
+
+**Resetting the PKI:** the dev-mode Vault loses all of its mounts (and therefore the CA) on every
+container restart, so `dev-up.sh` re-provisions `module.vault_pki` on every `make dev`. For a
+fully clean run (new CA, new certs), use `make dev-down && make dev`.
+
+### Verifying the mTLS flow
+
+After `make dev` finishes starting the application, confirm the whole chain end-to-end:
+
+1. **Cert issuance on startup** — the app log should contain a single issuance line (not a flood
+   of them — that would indicate the renewal-loop bug):
+
+   ```text
+   c.f.o.config.VaultPkiCertificateManager : Issued Vault PKI client certificate for
+   'order-service.client', expires at 2026-06-15T09:38:44Z
+   ```
+
+2. **R2DBC connection is UP via mTLS:**
+
+   ```sh
+   curl -s http://localhost:8080/actuator/health | jq '.components.r2dbc'
+   ```
+
+   Expect `"status": "UP"`. If the app started at all (Flyway also requires a working Postgres
+   connection), this is already strong evidence the cert/key/CA files were issued and accepted.
+
+3. **End-to-end API check** — create and fetch an order (see
+   [Testing the API](#-testing-the-api)). A successful `201`/`200` response means the app read and
+   wrote through the mTLS connection as the `order_service` role.
+
+4. **Direct proof at the database** — connect as `order_service` using the exact certificate the
+   app was issued, and confirm Postgres sees it as an mTLS connection with the expected client DN:
+
+   ```sh
+   # Copy the app's Vault-issued client cert/key into the postgres container
+   CERT_DIR="${TMPDIR:-/tmp/}order-service-pki"
+   docker compose cp "$CERT_DIR/client.crt" postgres:/tmp/client.crt
+   docker compose cp "$CERT_DIR/client.key" postgres:/tmp/client.key
+
+   # Connect with verify-full against the full CA chain (root + intermediate) that
+   # Terraform mounted into the container for server-side cert verification
+   docker compose exec postgres bash -c '
+     chmod 600 /tmp/client.key
+     PGSSLMODE=verify-full PGSSLCERT=/tmp/client.crt PGSSLKEY=/tmp/client.key \
+     PGSSLROOTCERT=/run/certs/ca-chain.pem \
+     psql "host=127.0.0.1 port=5432 dbname=orders_db user=order_service" \
+       -c "select current_user, current_database();" \
+       -c "select usename, ssl, client_dn from pg_stat_ssl join pg_stat_activity using (pid) where usename = current_user;"
+   '
+   ```
+
+   Expected output:
+
+   ```text
+    current_user  | current_database
+   ---------------+-------------------
+    order_service | orders_db
+
+       usename     | ssl |        client_dn
+   ----------------+-----+---------------------------
+    order_service  | t   | /CN=order-service.client
+   ```
+
+   > **Note:** `PGSSLROOTCERT` above points at `/run/certs/ca-chain.pem` (root + intermediate,
+   > mounted from `.certs/` for Postgres's own `ssl_ca_file`) — **not** the app's own
+   > `$CERT_DIR/ca-chain.crt`. The app's `ca-chain.crt` contains only the intermediate CA (Vault's
+   > `pki-int` issue response has no parent in its own chain), which Java's `TrustManager` accepts
+   > as a trust anchor but `libpq`/`psql` does not (`certificate verify failed: unable to get
+   > issuer certificate`). This is expected and not a sign that mTLS is misconfigured.
+
+### Troubleshooting Vault & AppRole authentication
+
+| Symptom | Likely cause | Fix |
+| :--- | :--- | :--- |
+| App fails at startup: `Timed out issuing initial Vault PKI certificate from http://localhost:8200` | The Vault container isn't up/healthy yet | `docker compose ps vault` and `docker compose logs vault`; confirm `curl -s "http://localhost:8200/v1/sys/health?standbyok=true" \| jq` shows `"initialized": true, "sealed": false` |
+| AppRole login fails with `{"errors":["invalid role or secret ID"]}` | `infra/terraform/.env.floci` has a stale `VAULT_APPROLE_ROLE_ID`/`VAULT_APPROLE_SECRET_ID` — dev-mode Vault wipes **all** mounts (including the AppRole role/secret IDs) on every container restart | `make dev` — re-runs `dev-up.sh`, which re-provisions `module.vault_pki` and rewrites `.env.floci` with fresh credentials |
+| `terraform apply -target=module.vault_pki` errors, e.g. `no default issuer configured`, or complains about resources that no longer exist | Terraform state references PKI mounts from a Vault instance that's since been wiped (container restarted without `terraform destroy`) | `make dev-down && make dev` for a fully clean run (new CA, new AppRole, new `.env.floci`) |
+| App startup error containing `Input stream does not contain valid private key` / `algid parse error, not a sequence` | Vault issued a PKCS#1 private key, which Netty's `SslContextBuilder` can't parse (it requires PKCS#8) | Confirm the `issue` request sends `"private_key_format": "pkcs8"` (`VaultPkiClient.kt`) |
+| `Renewed Vault PKI client certificate` logged repeatedly within seconds | The renewal delay was computed as ~0 | Confirm `PkiCertificate.ttl` is derived from `expiration - now` (`VaultPkiClient.kt`), not Vault's `lease_duration` — which is always `0` for PKI `issue` responses |
+
+**Inspecting Vault directly** — the dev-mode Vault container is unsealed with a fixed root token
+(`root`):
+
+```sh
+# UI: http://localhost:8200/ui  (token: root)
+
+# CLI, via the running container
+docker compose exec vault sh -c '
+  export VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=root
+  vault secrets list                          # expect pki-root/, pki-int/, ...
+  vault list pki-int/issuers                  # the intermediate CA issuer
+  vault read auth/approle/role/order-service  # AppRole policy/TTLs
+'
+```
+
+**Manually exercising the AppRole + issue flow** — replay the same two HTTP calls
+`VaultPkiClient` makes on startup, to isolate whether a problem is in Vault/Terraform or in the
+application:
+
+```sh
+source infra/terraform/.env.floci
+
+VAULT_TOKEN=$(curl -s http://localhost:8200/v1/auth/approle/login \
+  -d "{\"role_id\":\"$VAULT_APPROLE_ROLE_ID\",\"secret_id\":\"$VAULT_APPROLE_SECRET_ID\"}" \
+  | jq -r '.auth.client_token')
+
+curl -s http://localhost:8200/v1/pki-int/issue/order-service-client \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d '{"common_name":"order-service.client","private_key_format":"pkcs8"}' \
+  | jq '{expiration: .data.expiration, ca_chain_length: (.data.ca_chain | length)}'
+```
+
+A successful response has a non-empty `expiration` (epoch seconds, ~24h from now).
+
+### Validating the RDS Terraform module (`make dev-iac`)
+
+`make dev` always runs with `create_rds = false`, so the app gets full local mTLS connectivity via
+the Docker Compose Postgres above. `make dev-iac` is a separate, **Terraform-only** path for
+validating the `rds` module's `terraform plan`/`apply` against Floci — **the application is not
+started** in this mode, because Floci's RDS emulation doesn't support TLS at all (see
+"Why Docker for Postgres locally?" above), and Flyway's connection requires `sslmode=require`.
+
+1. **Provision RDS via Floci:**
+
+   ```sh
+   make dev-iac
+   ```
+
+   This re-applies Terraform with `create_rds = true` and prints the Floci RDS endpoint, e.g.:
+
+   ```text
+   RDS endpoint : localhost:7001
+   ```
+
+   — distinct from `localhost:5432` (the default Docker Compose Postgres), confirming Floci
+   provisioned a separate RDS instance.
+
+2. **Inspect the Terraform state/outputs:**
+
+   ```sh
+   cd infra/terraform
+   terraform output   # rds_endpoint, rds_address, rds_port, rds_database_name
+   terraform show     # full resource attributes for module.rds
+   cd ../..
+   ```
+
+3. **Connect directly to validate the instance** (password auth, `sslmode=disable` — Floci's RDS
+   has no TLS support, so `sslmode=require`/`verify-full` fails with "server does not support
+   SSL"):
+
+   ```sh
+   source .env && source infra/terraform/.env.floci
+   PGPASSWORD=$DB_PASSWORD psql "host=$DB_HOST port=$DB_PORT dbname=orders_db user=$DB_USER sslmode=disable" \
+     -c "select current_database(), current_user, version();"
+   ```
+
+4. **(Optional) confirm the documented app-startup failure** rather than taking it on faith:
+
+   ```sh
+   ./gradlew bootRun
+   ```
+
+   Flyway fails immediately with `org.postgresql.util.PSQLException: The server does not support
+   SSL` — `DB_HOST`/`DB_PORT` in `infra/terraform/.env.floci` now point at the TLS-incapable Floci
+   RDS endpoint. This is expected; press <kbd>Ctrl+C</kbd>.
+
+5. **Return to the default dev loop** — `make dev` re-applies Terraform with `create_rds = false`,
+   destroying the Floci RDS instance and rewriting `.env.floci` back to `localhost:5432`:
+
+   ```sh
+   make dev
+   ```
+
+> **MSK is not part of `make dev-iac`.** The same Floci bug that hangs `aws_msk_cluster`
+> provisioning (see "Why Docker for Kafka locally?" above) means `create_msk = true` is never set
+> by any command in this repo. Validating the `msk` module against Floci remains a manual,
+> expect-it-to-hang exercise until the upstream fix lands.
+
+## Known limitations
+
+- **TLS (let alone mTLS) against Floci's RDS/MSK is impossible:** both emulators need to read the
+  Postgres/Kafka wire protocol in cleartext, so they reject TLS client hellos outright
+  (`SSLRequest` → "server does not support SSL"). This is why Postgres and Kafka run as plain
+  Docker containers locally (see "Why Docker for Postgres/Kafka locally?" above), and why
+  `make dev-iac` provisions RDS via Floci for `terraform plan`/`apply` validation only — the app is
+  not started in that mode (see
+  [Validating the RDS Terraform module](#validating-the-rds-terraform-module-make-dev-iac)). MSK
+  validation against Floci isn't wired into any command at all, since `create_msk = true` hangs
+  `terraform apply` (see "Why Docker for Kafka locally?").
+- **Production RDS client-CA trust:** the `vault-pki` Terraform module and the application's Vault
+  PKI client are written generically enough to target the production Vault HA cluster
+  (`vault_address`/`vault_token` vars) and a real RDS Postgres instance. Whether AWS RDS for
+  PostgreSQL can be configured to trust a custom client CA for `clientcert`-based mTLS (vs. IAM
+  auth) needs further research and is tracked as a follow-up before this flow is used in
+  production.

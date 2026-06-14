@@ -57,3 +57,19 @@ output "vault_asg_name" {
   description = "Auto Scaling Group name for the Vault HA cluster (empty when create_vault = false)"
   value       = var.create_vault ? module.vault[0].asg_name : ""
 }
+
+output "vault_pki_ca_chain_path" {
+  description = "Path to the CA chain PEM file for docker-compose postgres (empty when create_vault_pki = false)"
+  value       = var.create_vault_pki ? module.vault_pki[0].ca_chain_path : ""
+}
+
+output "vault_pki_approle_role_id" {
+  description = "AppRole role_id for the Order Service to authenticate to Vault PKI (empty when create_vault_pki = false)"
+  value       = var.create_vault_pki ? module.vault_pki[0].approle_role_id : ""
+}
+
+output "vault_pki_approle_secret_id" {
+  description = "AppRole secret_id for the Order Service to authenticate to Vault PKI (empty when create_vault_pki = false)"
+  value       = var.create_vault_pki ? module.vault_pki[0].approle_secret_id : ""
+  sensitive   = true
+}

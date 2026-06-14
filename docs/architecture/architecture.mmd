@@ -18,11 +18,12 @@ graph TD
         end
         subgraph "Local Docker Environment (Docker Compose)"
             Kafka["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/apache-kafka/default.svg' style='width: 40px; height: 40px' /><br/>Kafka<br/>(Event Streaming)</div>"]:::nodeStyle
+            LocalPostgres["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/postgresql/default.svg' style='width: 40px; height: 40px' /><br/>PostgreSQL<br/>(TLS/mTLS)</div>"]:::nodeStyle
             Prometheus["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/prometheus/default.svg' style='width: 40px; height: 40px' /><br/>Prometheus<br/>(Metrics)</div>"]:::nodeStyle
             Grafana["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/grafana/default.svg' style='width: 40px; height: 40px' /><br/>Grafana<br/>(Dashboard)</div>"]:::nodeStyle
             Zipkin["<div><img src='https://avatars.githubusercontent.com/u/11860887?s=280&v=4' style='width: 40px; height: 40px' /><br/>Zipkin<br/>(Tracing)</div>"]:::nodeStyle
             Loki["<div><img src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/loki.svg' style='width: 40px; height: 40px' /><br/>Loki<br/>(Logs)</div>"]:::nodeStyle
-            LocalVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault<br/>(Dev Mode)</div>"]:::roadmapStyle
+            LocalVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault<br/>(Dev Mode, PKI)</div>"]:::nodeStyle
         end
     end
 
@@ -35,7 +36,7 @@ graph TD
         subgraph "Emulated AWS Services"
             EmulatedRDS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-rds/default.svg' style='width: 40px; height: 40px' /><br/>RDS for PostgreSQL<br/>(Database)</div>"]:::nodeStyle
             EmulatedMSK["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-res-amazon-msk-amazon-msk-connect/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Streaming<br/>for Apache Kafka (MSK)<br/>(Event Streaming)<br/><em>pending Floci bug fix</em></div>"]:::roadmapStyle
-            EmulatedVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault HA<br/>(Emulated)</div>"]:::roadmapStyle
+            EmulatedVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault HA<br/>(EC2/ASG, Emulated)</div>"]:::roadmapStyle
             EmulatedKMS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-key-management-service/default.svg' style='width: 40px; height: 40px' /><br/>AWS KMS<br/>(Auto-unseal, Emulated)</div>"]:::roadmapStyle
         end
     end
@@ -62,9 +63,8 @@ graph TD
     end
 
     %% --- Define Relationships ---
-    %% Current State [0-8]
+    %% Current State [0-9]
     LocalUser -- "localhost:8080/orders (POST)<br/>localhost:8080/orders/{id} (GET)" --> LocalApp
-    LocalApp --> EmulatedRDS
     LocalApp --> Kafka
     LocalApp -- "Telemetry" --> Prometheus
     LocalApp --> Zipkin
@@ -72,25 +72,22 @@ graph TD
     Prometheus --> Grafana
     Zipkin --> Grafana
     Loki --> Grafana
+    LocalApp -- "mTLS<br/>(Vault-issued client cert,<br/>order_service role)" --> LocalPostgres
+    LocalApp -- "AppRole login,<br/>issue short-lived client cert" --> LocalVault
 
-    %% Local — Vault PKI (Roadmap) [9]
-    LocalApp -.-> |"Fetch PKI client cert<br/>(Vault Agent)"| LocalVault
-
-    %% IaC Connections (Roadmap) [11-18]
+    %% IaC Connections (Roadmap) [10-15]
     Terraform -.-> |Defines| Floci
-    Floci -.-> |Emulates| EmulatedRDS
     Floci -.-> |Emulates| EmulatedMSK
+    Floci -.-> |Emulates| EmulatedRDS
     Floci -.-> |Emulates| EmulatedVault
     Floci -.-> |Emulates| EmulatedKMS
-    LocalApp -.-> |"mTLS auth<br/>(client cert from Vault PKI)"| EmulatedRDS
     LocalApp -.-> |Connects to| EmulatedMSK
-    LocalApp -.-> |"Fetch PKI client cert<br/>(Vault Agent)"| EmulatedVault
 
-    %% Production Connections (Roadmap) [19-30]
+    %% Production Connections (Roadmap) [16-27]
     ProdUser -- "domain.com/orders (POST)<br/>domain.com/orders/{id} (GET)" --> EC2App
     EC2App -- "mTLS auth<br/>(client cert from Vault PKI)" --> RDS
     EC2App --> MSK
-    EC2App -- "Fetch PKI client cert<br/>(Vault Agent)" --> VaultHA
+    EC2App -- "AppRole login,<br/>issue client cert" --> VaultHA
     ProdKMS -.-> |Auto-unseal| VaultHA
     EC2App -- "OTel Traces" --> ADOT
     ADOT --> AWS_XRay
@@ -100,11 +97,11 @@ graph TD
     AWS_XRay --> AWS_Grafana
     CloudWatchLogs --> AWS_Grafana
 
-    %% Invisible links for layout [31-32]
+    %% Invisible links for layout [28-29]
     local_flow --- iac_flow
     iac_flow --- prod_flow
 
     %% --- Style Links ---
-    linkStyle 0,1,2,3,4,5,6,7,8 stroke:#006d77,stroke-width:2px
-    linkStyle 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 stroke:#999,stroke-width:2px,stroke-dasharray:5 5
-    linkStyle 30,31 stroke-width:0px
+    linkStyle 0,1,2,3,4,5,6,7,8,9 stroke:#006d77,stroke-width:2px
+    linkStyle 10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27 stroke:#999,stroke-width:2px,stroke-dasharray:5 5
+    linkStyle 28,29 stroke-width:0px

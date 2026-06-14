@@ -12,3 +12,9 @@ spring:
   flyway:
     user: user
     password: password
+
+# Vault PKI is not used in tests — SpringTestSpec.R2dbcBridgeConfig provides a
+# plain (non-TLS) ConnectionFactory backed by embedded Postgres.
+vault:
+  pki:
+    enabled: false
