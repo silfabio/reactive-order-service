@@ -353,7 +353,7 @@ After `make dev` finishes starting the application, confirm the whole chain end-
 1. **Cert issuance on startup** — the app log should contain a single issuance line (not a flood
    of them — that would indicate the renewal-loop bug):
 
-   ```
+   ```text
    c.f.o.config.VaultPkiCertificateManager : Issued Vault PKI client certificate for
    'order-service.client', expires at 2026-06-15T09:38:44Z
    ```
@@ -394,7 +394,7 @@ After `make dev` finishes starting the application, confirm the whole chain end-
 
    Expected output:
 
-   ```
+   ```text
     current_user  | current_database
    ---------------+-------------------
     order_service | orders_db
@@ -471,7 +471,7 @@ started** in this mode, because Floci's RDS emulation doesn't support TLS at all
 
    This re-applies Terraform with `create_rds = true` and prints the Floci RDS endpoint, e.g.:
 
-   ```
+   ```text
    RDS endpoint : localhost:7001
    ```
 

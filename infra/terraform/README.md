@@ -132,7 +132,7 @@ Outputs: `vpc_id`, `public_subnet_ids`, `private_subnet_ids`, `app_security_grou
 | `db_skip_final_snapshot` | `true` | Skip final snapshot on destroy (set `false` for prod) |
 
 `create_rds` defaults to `false` locally: Postgres runs as a Docker Compose container instead,
-since Floci's RDS emulation can't do TLS/mTLS (see the top-level README). When `false`,
+since Floci's RDS emulation can't do TLS/mTLS (see the top-level readme). When `false`,
 `rds_address`/`rds_port` outputs fall back to `localhost`/`5432`.
 
 Outputs: `rds_endpoint`, `rds_address`, `rds_port`, `rds_database_name`

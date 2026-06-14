@@ -1,10 +1,4 @@
 locals {
-  tags = {
-    Project     = var.project_name
-    Environment = var.environment
-    ManagedBy   = "terraform"
-  }
-
   # Ceiling for the PKI mounts' max_lease_ttl — must be >= pki_root_ttl (the
   # longest-lived cert issued). The individual cert TTLs above remain the
   # actual configurable values; this is just the mount-level cap.

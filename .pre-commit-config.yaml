@@ -18,7 +18,10 @@ repos:
         # Runs at pre-push (not pre-commit): VALIDATE_ALL_CODEBASE=false diffs DEFAULT_BRANCH...HEAD,
         # and HEAD only includes the commit(s) being committed once `git commit` has finished. At
         # pre-push time HEAD already includes them, so the diff matches what CI computes.
-        entry: bash -c 'docker run --rm --platform linux/amd64 -e RUN_LOCAL=true -e GITHUB_ACTIONS=true -e VALIDATE_ALL_CODEBASE=false -e DEFAULT_BRANCH=main -e VALIDATE_JSCPD=false -e FILTER_REGEX_EXCLUDE=".*src/.*\\.kt" -v "$PWD:/tmp/lint" ghcr.io/super-linter/super-linter:v6'
+        # sql-lint (SQL) is MySQL-oriented and doesn't understand PostgreSQL-only DDL/DML used in
+        # this project (e.g. GRANT ... ON ALL TABLES IN SCHEMA, ALTER DEFAULT PRIVILEGES).
+        # SQLFLUFF (Postgres dialect) remains enabled as the SQL linter.
+        entry: bash -c 'docker run --rm --platform linux/amd64 -e RUN_LOCAL=true -e GITHUB_ACTIONS=true -e VALIDATE_ALL_CODEBASE=false -e DEFAULT_BRANCH=main -e VALIDATE_JSCPD=false -e VALIDATE_SQL=false -e FILTER_REGEX_EXCLUDE=".*src/.*\\.kt" -v "$PWD:/tmp/lint" ghcr.io/super-linter/super-linter:v6'
         language: system
         pass_filenames: false
         always_run: true
