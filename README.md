@@ -67,6 +67,17 @@ This project serves as a strong foundation. The following features are planned f
 
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
 - **🗄️ Floci MSK emulation:** Run Kafka locally through Terraform + Floci (the same code path used in production) once the upstream Floci bug is resolved — see the note below.
+- **🔐 Vault HA load balancer/DNS endpoint:** `modules/vault` currently provisions only the
+  Raft ASG/EC2 nodes with no LB/DNS in front of them. Add an NLB (routing only to the active,
+  unsealed leader via `sys/health?standbyok=true&activecode=200`) + Route53 record, then wire
+  `vault_cluster_address` to it so production applies of `module.vault_pki` no longer need to
+  pass `vault_address`/`TF_VAR_vault_address` manually.
+- **🔐 Vault HA per-node TLS:** the Raft cluster's `listener "tcp"` currently has
+  `tls_disable = true` (`modules/vault/templates/vault-user-data.sh.tpl`), so both client API
+  traffic and inter-node Raft replication are plaintext, even within the VPC. Needs a per-node
+  server certificate for each Vault instance — bootstrapped via a two-phase boot (start with TLS
+  disabled, auto-unseal via KMS, then a follow-up step issues a cert and reloads the listener),
+  since Vault's own PKI engine isn't reachable until Vault is already up.
 
 ## 🏗️ Local Infrastructure (Terraform + Floci)
 
