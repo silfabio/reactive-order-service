@@ -27,6 +27,9 @@ http-client.private.env.json
 # Test Databases
 pgdata/
 
+# Vault PKI certs generated locally by terraform (module.vault_pki)
+.certs/
+
 # Node.js
 node_modules/
 
@@ -44,5 +47,6 @@ infra/terraform/.terraform.lock.hcl
 infra/terraform/terraform.tfstate
 infra/terraform/terraform.tfstate.backup
 infra/terraform/terraform.tfstate.*.backup
+.terraform.tfstate.lock.info
 infra/terraform/terraform.prod.tfvars
 infra/terraform/.env.floci

@@ -181,3 +181,72 @@ variable "vault_version" {
   type        = string
   default     = "1.18.1"
 }
+
+# ── Vault PKI ────────────────────────────────────────────────────────────────
+
+variable "vault_address" {
+  description = "Vault API address for the PKI Terraform resources. Local: the docker-compose dev-mode container at http://localhost:8200. Production: the Vault HA cluster's address (module.vault has no LB yet — pass via TF_VAR_vault_address)."
+  type        = string
+  default     = "http://localhost:8200"
+}
+
+variable "vault_token" {
+  description = "Vault token used to bootstrap PKI mounts/roles/AppRole. Local default is the dev-mode container's fixed root token. In production, inject via TF_VAR_vault_token — never commit a real token."
+  type        = string
+  sensitive   = true
+  default     = "root"
+}
+
+variable "create_vault_pki" {
+  description = "Provision the Vault PKI two-tier CA + AppRole for the Order Service. Requires a reachable Vault at vault_address (local dev-mode container, or the prod HA cluster)."
+  type        = bool
+  default     = false
+}
+
+variable "pki_root_ttl" {
+  description = "TTL of the root CA certificate"
+  type        = string
+  default     = "87600h" # 10 years
+}
+
+variable "pki_intermediate_ttl" {
+  description = "TTL of the intermediate CA certificate"
+  type        = string
+  default     = "43800h" # 5 years
+}
+
+variable "pki_cert_ttl" {
+  description = "TTL of short-lived client certificates issued to the Order Service"
+  type        = string
+  default     = "24h"
+}
+
+variable "postgres_server_cert_ttl" {
+  description = "TTL of the Postgres server certificate"
+  type        = string
+  default     = "720h" # 30 days
+}
+
+variable "pki_common_name_root" {
+  description = "Common name for the root CA"
+  type        = string
+  default     = "Reactive Order Service Root CA"
+}
+
+variable "pki_common_name_intermediate" {
+  description = "Common name for the intermediate CA"
+  type        = string
+  default     = "Reactive Order Service Intermediate CA"
+}
+
+variable "postgres_server_dns_names" {
+  description = "DNS names the Postgres server certificate is valid for"
+  type        = list(string)
+  default     = ["localhost", "postgres"]
+}
+
+variable "postgres_server_ip_sans" {
+  description = "IP SANs for the Postgres server certificate"
+  type        = list(string)
+  default     = ["127.0.0.1"]
+}

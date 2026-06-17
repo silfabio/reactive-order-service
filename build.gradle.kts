@@ -43,7 +43,7 @@ dependencies {
     // Persistence
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     runtimeOnly("org.postgresql:postgresql") // Required for Flyway JDBC migrations
-    runtimeOnly("org.postgresql:r2dbc-postgresql") // Reactive driver
+    implementation("org.postgresql:r2dbc-postgresql") // Reactive driver — also provides SSL/mTLS connection options
 
     // Database Migrations
     implementation("org.flywaydb:flyway-core")

@@ -17,8 +17,11 @@ db_allocated_storage   = 20
 db_multi_az            = false
 db_skip_final_snapshot = true
 
-# RDS — provisioned locally via Floci; no DB subnet group needed (Floci mock)
-create_rds             = true
+# RDS — disabled locally; Postgres runs as a Docker container instead, with
+# Vault PKI mTLS (see below). Set create_rds = true (e.g. via `make dev-iac`)
+# to validate the RDS Terraform module against Floci — the app won't be able
+# to connect to that instance (same caveat as create_msk below).
+create_rds             = false
 create_db_subnet_group = false
 
 # MSK — disabled locally; Kafka runs as a Docker container instead
@@ -38,3 +41,13 @@ create_vault = false
 # Vault HA cluster config (used when create_vault = true)
 vault_instance_type = "t3.micro"
 vault_node_count    = 3
+
+# Vault PKI — issues a two-tier CA (root + intermediate) and short-lived
+# client certs for the Order Service against the docker-compose dev-mode
+# Vault container, enabling full mTLS to the docker-compose postgres below.
+# The dev-mode container is ephemeral (in-memory storage, fixed root token
+# "root" — safe only because it's local-only); the CA is regenerated on every
+# `make dev` run.
+create_vault_pki = true
+vault_address    = "http://localhost:8200"
+vault_token      = "root"

@@ -1,2 +1,6 @@
 [sqlfluff]
 dialect = postgres
+# Postgres DDL/DML for role/privilege setup (GRANT ... ON ALL TABLES IN SCHEMA,
+# ALTER DEFAULT PRIVILEGES ...) reads far more clearly on one line than wrapped;
+# allow longer lines instead of breaking statements awkwardly.
+max_line_length = 120

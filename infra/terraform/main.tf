@@ -71,3 +71,24 @@ module "vault" {
   ami_id        = var.vault_ami_id
   vault_version = var.vault_version
 }
+
+module "vault_pki" {
+  count  = var.create_vault_pki ? 1 : 0
+  source = "./modules/vault-pki"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  common_name_root         = var.pki_common_name_root
+  common_name_intermediate = var.pki_common_name_intermediate
+
+  pki_root_ttl             = var.pki_root_ttl
+  pki_intermediate_ttl     = var.pki_intermediate_ttl
+  pki_cert_ttl             = var.pki_cert_ttl
+  postgres_server_cert_ttl = var.postgres_server_cert_ttl
+
+  postgres_server_dns_names = var.postgres_server_dns_names
+  postgres_server_ip_sans   = var.postgres_server_ip_sans
+
+  certs_output_dir = abspath("${path.root}/../../.certs")
+}

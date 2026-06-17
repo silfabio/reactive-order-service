@@ -9,9 +9,11 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
 
-  # Flyway configuration for database migrations (uses JDBC)
+  # Flyway configuration for database migrations (uses JDBC). sslmode=require
+  # satisfies the hostssl-only pg_hba.conf rules without certificate verification —
+  # migrations run as DB_USER (password auth), not the mTLS order_service role.
   flyway:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/orders_db
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/orders_db?sslmode=require
     user: ${DB_USER}
     password: ${DB_PASSWORD}
     enabled: true
@@ -60,3 +62,16 @@ resilience4j:
         wait-duration: 500ms
         retry-exceptions:
           - io.r2dbc.spi.R2dbcTransientResourceException
+
+# Vault PKI: issues the short-lived mTLS client certificate the Order Service
+# presents to Postgres (see infra/terraform/modules/vault-pki). AppRole credentials
+# are written to infra/terraform/.env.floci by scripts/dev-up.sh.
+vault:
+  pki:
+    enabled: ${VAULT_PKI_ENABLED:true}
+    address: ${VAULT_ADDR:http://localhost:8200}
+    app-role-id: ${VAULT_APPROLE_ROLE_ID:}
+    app-role-secret-id: ${VAULT_APPROLE_SECRET_ID:}
+    pki-mount-path: pki-int
+    client-cert-role: order-service-client
+    common-name: order-service.client

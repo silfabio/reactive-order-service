@@ -26,6 +26,11 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           VALIDATE_JSCPD: false
+          # sql-lint (SQL) is MySQL-oriented and doesn't understand PostgreSQL-only
+          # DDL/DML used in this project (e.g. GRANT ... ON ALL TABLES IN SCHEMA,
+          # ALTER DEFAULT PRIVILEGES). SQLFLUFF (Postgres dialect) remains enabled
+          # as the SQL linter.
+          VALIDATE_SQL: false
           # *.tpl files are Terraform templates (rendered via templatefile()), not
           # standalone scripts — their ${...} interpolation syntax trips up the
           # shellcheck/shfmt versions bundled with super-linter.
