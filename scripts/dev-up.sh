@@ -55,9 +55,11 @@ until curl -sf "http://localhost:8200/v1/sys/health?standbyok=true" >/dev/null 2
 done
 echo " ready"
 
-# ── Terraform init (always — idempotent and fast when nothing has changed) ────
-echo "==> Running terraform init..."
-terraform -chdir="$TF_DIR" init -upgrade
+# ── Terraform init — only on first run or when .terraform/ is missing ────────
+if [ ! -d "$TF_DIR/.terraform" ]; then
+	echo "==> Running terraform init..."
+	terraform -chdir="$TF_DIR" init -upgrade
+fi
 
 # ── Terraform apply — credentials injected from .env via TF_VAR_* ────────────
 # shellcheck source=../.env
