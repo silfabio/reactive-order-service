@@ -6,12 +6,14 @@ import org.apache.kafka.clients.admin.AdminClientConfig
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.ReactiveHealthIndicator
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import java.util.concurrent.TimeUnit
 
 @Component("kafka")
+@Profile("!test")
 class KafkaHealthIndicator(
     @Value("\${spring.kafka.bootstrap-servers}") bootstrapServers: String,
 ) : ReactiveHealthIndicator {
