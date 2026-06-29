@@ -65,7 +65,7 @@ services:
       start_period: 30s
 
   floci:
-    image: floci/floci:latest
+    image: floci/floci:1.5.28
     container_name: reactive-floci
     ports:
       - "4566:4566"

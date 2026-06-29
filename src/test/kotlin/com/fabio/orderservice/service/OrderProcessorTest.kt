@@ -32,11 +32,13 @@ import org.springframework.cloud.stream.binder.test.InputDestination
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration
 import org.springframework.context.annotation.Import
 import org.springframework.messaging.support.MessageBuilder
+import org.springframework.test.context.ActiveProfiles
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 // Define the necessary bindings directly in the test properties.
 // This makes the test self-contained and independent of the main application.yml.
+@ActiveProfiles("test")
 @SpringBootTest(
     properties = [
         "spring.autoconfigure.exclude=" +

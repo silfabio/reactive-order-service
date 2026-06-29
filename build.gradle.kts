@@ -79,7 +79,7 @@ dependencies {
         exclude(group = "org.mockito", module = "mockito-junit-jupiter")
     }
     testImplementation("io.projectreactor:reactor-test") // For reactive testing
-    implementation("io.projectreactor:reactor-tools") // For debugging reactive streams
+    developmentOnly("io.projectreactor:reactor-tools") // For debugging reactive streams — excluded from bootJar
 
     // Kotlin Test Frameworks
     testImplementation("io.kotest:kotest-runner-junit5:5.9.0")
