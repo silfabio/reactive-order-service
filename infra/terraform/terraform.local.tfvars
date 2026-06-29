@@ -24,14 +24,20 @@ db_skip_final_snapshot = true
 create_rds             = false
 create_db_subnet_group = false
 
-# MSK — disabled locally; Kafka runs as a Docker container instead
+# MSK — disabled by default; set via `make dev-msk` (CREATE_MSK=true) to run
+# Kafka via Floci/Redpanda instead of the plain Docker container. Requires
+# Floci 1.5.28+ which fixes: (a) the CREATING-state hang, (b) BrokerSoftwareInfo
+# in DescribeCluster, and (c) the advertised-address bug. In container mode
+# (floci runs as Docker), Redpanda advertises its container name — so the app
+# must run as a Docker sibling (see docker-compose.msk.yml and make dev-msk).
 create_msk = false
 
 # MSK instance config
-kafka_version       = "3.6.0"
-kafka_broker_nodes  = 1
-kafka_instance_type = "kafka.t3.small"
-kafka_volume_size   = 20
+kafka_version                = "3.6.0"
+kafka_broker_nodes           = 1
+kafka_instance_type          = "kafka.t3.small"
+kafka_volume_size            = 20
+kafka_cluster_create_timeout = "5m" # Floci is near-instant; fail fast on local errors
 
 # Vault — the KMS auto-unseal key is always created; the HA cluster (ASG/EC2)
 # is disabled locally because Floci EC2 instances aren't reachable from the

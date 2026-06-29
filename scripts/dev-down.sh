@@ -13,7 +13,10 @@ terraform -chdir="$ROOT_DIR/infra/terraform" destroy \
 	-auto-approve
 
 echo "==> Stopping Docker Compose services..."
-docker compose -f "$ROOT_DIR/docker-compose.yml" down
+# Include the MSK overlay so the order-service container is also stopped when
+# running in dev-msk mode. env_file required:false in docker-compose.msk.yml
+# means this is safe to run even when .env.floci no longer exists.
+docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.msk.yml" down
 
 echo "==> Removing generated env file..."
 rm -f "$ROOT_DIR/infra/terraform/.env.floci"

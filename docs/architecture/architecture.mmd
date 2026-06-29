@@ -14,16 +14,17 @@ graph TD
             LocalUser["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/azure-users/default.svg' style='width: 40px; height: 40px' /><br/>User</div>"]:::nodeStyle
         end
         subgraph "Local App"
-             LocalApp["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/spring-boot/default.svg' style='width: 40px; height: 40px' /><br/>Order Service<br/>(Spring WebFlux)</div>"]:::nodeStyle
+            LocalAppContainer["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/spring-boot/default.svg' style='width: 40px; height: 40px' /><br/>Order Service<br/>(Docker Container)<br/>:8080 | :5005 JDWP<br/><em>make dev-msk</em></div>"]:::nodeStyle
+            LocalApp["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/spring-boot/default.svg' style='width: 40px; height: 40px' /><br/>Order Service<br/>(Spring WebFlux)<br/><em>make dev</em></div>"]:::nodeStyle
         end
         subgraph "Local Docker Environment (Docker Compose)"
-            Kafka["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/apache-kafka/default.svg' style='width: 40px; height: 40px' /><br/>Kafka<br/>(Event Streaming)</div>"]:::nodeStyle
+            LocalVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault<br/>(Dev Mode, PKI)</div>"]:::nodeStyle
             LocalPostgres["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/postgresql/default.svg' style='width: 40px; height: 40px' /><br/>PostgreSQL<br/>(TLS/mTLS)</div>"]:::nodeStyle
             Prometheus["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/prometheus/default.svg' style='width: 40px; height: 40px' /><br/>Prometheus<br/>(Metrics)</div>"]:::nodeStyle
             Grafana["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/grafana/default.svg' style='width: 40px; height: 40px' /><br/>Grafana<br/>(Dashboard)</div>"]:::nodeStyle
             Zipkin["<div><img src='https://avatars.githubusercontent.com/u/11860887?s=280&v=4' style='width: 40px; height: 40px' /><br/>Zipkin<br/>(Tracing)</div>"]:::nodeStyle
             Loki["<div><img src='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/loki.svg' style='width: 40px; height: 40px' /><br/>Loki<br/>(Logs)</div>"]:::nodeStyle
-            LocalVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault<br/>(Dev Mode, PKI)</div>"]:::nodeStyle
+            Kafka["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/apache-kafka/default.svg' style='width: 40px; height: 40px' /><br/>Kafka<br/>(Event Streaming)<br/><em>make dev</em></div>"]:::nodeStyle
         end
     end
 
@@ -35,9 +36,9 @@ graph TD
         end
         subgraph "Emulated AWS Services"
             EmulatedRDS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-rds/default.svg' style='width: 40px; height: 40px' /><br/>RDS for PostgreSQL<br/>(Database)</div>"]:::nodeStyle
-            EmulatedMSK["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-res-amazon-msk-amazon-msk-connect/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Streaming<br/>for Apache Kafka (MSK)<br/>(Event Streaming)<br/><em>pending Floci bug fix</em></div>"]:::roadmapStyle
             EmulatedVault["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault HA<br/>(EC2/ASG, Emulated)</div>"]:::roadmapStyle
             EmulatedKMS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-key-management-service/default.svg' style='width: 40px; height: 40px' /><br/>AWS KMS<br/>(Auto-unseal, Emulated)</div>"]:::roadmapStyle
+            EmulatedMSK["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-res-amazon-msk-amazon-msk-connect/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Streaming<br/>for Apache Kafka (MSK)<br/>(Redpanda via Floci 1.5.28+)<br/><em>make dev-msk</em></div>"]:::nodeStyle
         end
     end
 
@@ -49,10 +50,10 @@ graph TD
         subgraph "Production App & Infra (AWS)"
             EC2App["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-ec2/default.svg' style='width: 40px; height: 40px' /><br/>AWS EC2<br/>(Spring WebFlux)</div>"]:::roadmapStyle
             ADOT["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-distro-for-opentelemetry/default.svg' style='width: 40px; height: 40px' /><br/>ADOT<br/>(OpenTelemetry Collector)</div>"]:::roadmapStyle
-            RDS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-rds/default.svg' style='width: 40px; height: 40px' /><br/>RDS for PostgreSQL<br/>(Database)</div>"]:::roadmapStyle
-            MSK["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-res-amazon-msk-amazon-msk-connect/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Streaming<br/>for Apache Kafka (MSK)<br/>(Event Streaming)</div>"]:::roadmapStyle
             VaultHA["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/vault/default.svg' style='width: 40px; height: 40px' /><br/>HashiCorp Vault HA<br/>(EC2, Raft, multi-AZ)</div>"]:::roadmapStyle
             ProdKMS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-key-management-service/default.svg' style='width: 40px; height: 40px' /><br/>AWS KMS<br/>(Vault Auto-unseal)</div>"]:::roadmapStyle
+            RDS["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-rds/default.svg' style='width: 40px; height: 40px' /><br/>RDS for PostgreSQL<br/>(Database)</div>"]:::roadmapStyle
+            MSK["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-res-amazon-msk-amazon-msk-connect/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Streaming<br/>for Apache Kafka (MSK)<br/>(Event Streaming)</div>"]:::roadmapStyle
         end
         subgraph "Production Observability (AWS Managed)"
             AWS_Prometheus["<div><img src='https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-managed-service-for-prometheus/default.svg' style='width: 40px; height: 40px' /><br/>Amazon Managed Service<br/>for Prometheus (Metrics)</div>"]:::roadmapStyle
@@ -63,7 +64,13 @@ graph TD
     end
 
     %% --- Define Relationships ---
-    %% Current State [0-9]
+    %% MSK E2E mode connections (make dev-msk) [0-3] — defined first so Dagre places LocalAppContainer left
+    LocalUser -- "localhost:8080/orders (POST)<br/>localhost:8080/orders/{id} (GET)" --> LocalAppContainer
+    LocalAppContainer --> EmulatedMSK
+    LocalAppContainer -- "mTLS<br/>(Vault-issued client cert,<br/>order_service role)" --> LocalPostgres
+    LocalAppContainer -- "AppRole login,<br/>issue short-lived client cert" --> LocalVault
+
+    %% Default dev mode connections (make dev) [4-13]
     LocalUser -- "localhost:8080/orders (POST)<br/>localhost:8080/orders/{id} (GET)" --> LocalApp
     LocalApp --> Kafka
     LocalApp -- "Telemetry" --> Prometheus
@@ -75,20 +82,19 @@ graph TD
     LocalApp -- "mTLS<br/>(Vault-issued client cert,<br/>order_service role)" --> LocalPostgres
     LocalApp -- "AppRole login,<br/>issue short-lived client cert" --> LocalVault
 
-    %% IaC Connections (Roadmap) [10-15]
+    %% IaC Connections [14-18]
     Terraform -.-> |Defines| Floci
     Floci -.-> |Emulates| EmulatedMSK
     Floci -.-> |Emulates| EmulatedRDS
     Floci -.-> |Emulates| EmulatedVault
     Floci -.-> |Emulates| EmulatedKMS
-    LocalApp -.-> |Connects to| EmulatedMSK
 
-    %% Production Connections (Roadmap) [16-27]
+    %% Production Connections (Roadmap) [19-30]
     ProdUser -- "domain.com/orders (POST)<br/>domain.com/orders/{id} (GET)" --> EC2App
-    EC2App -- "mTLS auth<br/>(client cert from Vault PKI)" --> RDS
-    EC2App --> MSK
     EC2App -- "AppRole login,<br/>issue client cert" --> VaultHA
     ProdKMS -.-> |Auto-unseal| VaultHA
+    EC2App -- "mTLS auth<br/>(client cert from Vault PKI)" --> RDS
+    EC2App --> MSK
     EC2App -- "OTel Traces" --> ADOT
     ADOT --> AWS_XRay
     EC2App -- "Metrics" --> AWS_Prometheus
@@ -97,11 +103,16 @@ graph TD
     AWS_XRay --> AWS_Grafana
     CloudWatchLogs --> AWS_Grafana
 
-    %% Invisible links for layout [28-29]
+    %% Invisible links for layout [31-32]
     local_flow --- iac_flow
     iac_flow --- prod_flow
 
     %% --- Style Links ---
-    linkStyle 0,1,2,3,4,5,6,7,8,9 stroke:#006d77,stroke-width:2px
-    linkStyle 10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27 stroke:#999,stroke-width:2px,stroke-dasharray:5 5
-    linkStyle 28,29 stroke-width:0px
+    %% MSK E2E mode (make dev-msk): solid amber [0-3]
+    linkStyle 0,1,2,3 stroke:#e07b39,stroke-width:2px
+    %% Default dev mode (make dev): solid teal [4-13]
+    linkStyle 4,5,6,7,8,9,10,11,12,13 stroke:#006d77,stroke-width:2px
+    %% IaC and production (dashed grey) [14-30]
+    linkStyle 14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 stroke:#999,stroke-width:2px,stroke-dasharray:5 5
+    %% Invisible layout links [31-32]
+    linkStyle 31,32 stroke-width:0px

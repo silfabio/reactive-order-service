@@ -66,7 +66,7 @@ Complete request lifecycle for creating and retrieving an order, including the s
 This project serves as a strong foundation. The following features are planned for future iterations:
 
 - **📈 Observability as Code:** Define Grafana dashboards and Prometheus alerts as code using `Terraform` to ensure the observability stack is version-controlled and repeatable.
-- **🗄️ Floci MSK emulation:** Run Kafka locally through Terraform + Floci (the same code path used in production) once the upstream Floci bug is resolved — see the note below.
+- ~~**🗄️ Floci MSK emulation:**~~ **Done** — Kafka now runs via Terraform + Floci/Redpanda in `make dev-msk` mode. See [MSK E2E mode](#msk-e2e-mode-make-dev-msk).
 - **🔐 Vault HA load balancer/DNS endpoint:** `modules/vault` currently provisions only the
   Raft ASG/EC2 nodes with no LB/DNS in front of them. Add an NLB (routing only to the active,
   unsealed leader via `sys/health?standbyok=true&activecode=200`) + Route53 record, then wire
@@ -89,23 +89,24 @@ All infrastructure is defined as code using Terraform. In production every resou
 |:---|:---|:---|
 | **VPC / Networking** | Terraform + Floci | Terraform + AWS |
 | **PostgreSQL** | Docker Compose (`postgres:16`, mTLS via Vault PKI) | Terraform + AWS RDS |
-| **Kafka** | Docker Compose (`apache/kafka`, `localhost:9092`) | Terraform + AWS MSK |
+| **Kafka** | Docker Compose (`apache/kafka`, `localhost:9092`) by default; or Floci/Redpanda via `make dev-msk` (app runs as Docker sibling — see [MSK E2E mode](#msk-e2e-mode-make-dev-msk)) | Terraform + AWS MSK |
 | **Vault PKI** | Docker Compose (`hashicorp/vault`, dev mode) + Terraform `vault-pki` module | Terraform `vault-pki` module against the Vault HA cluster |
 
 > Run `make dev-iac` to additionally provision RDS via Floci/Terraform for IaC validation
 > (Terraform-only — the app is not started) — see
 > [Validating the RDS Terraform module](#validating-the-rds-terraform-module-make-dev-iac) below.
+>
+> Run `make dev-msk` to use Floci/Redpanda for Kafka instead of the plain Docker container — the
+> app runs as a Docker sibling with JDWP remote debug on port 5005. See
+> [MSK E2E mode](#msk-e2e-mode-make-dev-msk) below.
 
-### Why Docker for Kafka locally?
+### Local Kafka: two modes
 
-Floci 1.5.22 has a known bug: when `aws_msk_cluster` is provisioned, Floci starts the backing
-Redpanda container but its internal state machine never transitions the cluster from `CREATING` to
-`ACTIVE`. The Terraform AWS provider polls for `ACTIVE` before completing, so the apply hangs
-indefinitely and eventually times out. Until this is fixed upstream, `create_msk = false` is set
-in `terraform.local.tfvars` and Kafka runs as a plain Docker container. The MSK Terraform module
-(`infra/terraform/modules/msk`) is fully defined and is used in production without changes. For the
-same reason, `make dev-iac` does **not** set `create_msk = true` — validating the `msk` module
-against Floci remains a manual, expect-it-to-hang exercise until the upstream fix lands.
+**Default (`make dev`):** Kafka runs as a plain `apache/kafka` Docker container on `localhost:9092`. The application runs as a native Java process on the Mac host and connects directly — simplest setup, easiest to iterate on in IntelliJ.
+
+**MSK E2E (`make dev-msk`):** Kafka runs via Floci/Redpanda using the same `module.msk` Terraform module as production. This validates the full Terraform → Floci → MSK code path end-to-end. It requires Floci 1.5.28+, which ships fixes for three bugs that previously blocked local MSK use: (a) the cluster stuck in `CREATING` state, (b) missing `BrokerSoftwareInfo` in `DescribeCluster`, and (c) Redpanda advertising the wrong broker address.
+
+> **Why must the app run as a container in MSK mode?** Floci runs as a Docker container in this project. In that "container mode", Redpanda advertises its own Docker container hostname rather than `localhost:<port>`. That hostname resolves via Docker's embedded DNS but not from a Mac-host process. The application therefore runs as a Docker sibling container (`docker-compose.msk.yml` overlay) in the same Docker network. JDWP remote debugging on port 5005 is enabled to preserve IntelliJ debuggability — see [MSK E2E mode](#msk-e2e-mode-make-dev-msk).
 
 ### Why Docker for Postgres locally?
 
@@ -135,13 +136,20 @@ full walkthrough, including why the app isn't started in that mode.
 - **Node.js & npm** (For running local scripts)
 
 ### 2. Start Infrastructure and Run
-A single command starts Docker Desktop (if needed), all Docker Compose services (Floci, Kafka, Postgres, Vault, observability), provisions VPC/networking via Terraform + Floci and the Vault PKI two-tier CA via Terraform + Vault, and boots the application:
+
+**Default mode** — Kafka as a Docker container, app as a native Java process:
 
 ```sh
 make dev
 ```
 
-To stop and tear down the infrastructure:
+**MSK E2E mode** — Kafka via Floci/Redpanda (same Terraform module as production), app as a Docker sibling container with remote debug on port 5005:
+
+```sh
+make dev-msk
+```
+
+To stop and tear down the infrastructure (works for both modes):
 
 ```sh
 make dev-down
@@ -150,7 +158,9 @@ make dev-down
 > See [scripts/dev-up.sh](scripts/dev-up.sh) for what the setup script does step by step, and [infra/terraform/README.md](infra/terraform/README.md) for the full Terraform reference.
 
 ### 3. Run the Application
-When running from your IDE instead of the terminal, run `./scripts/dev-up.sh` once first (sets up the infrastructure and writes connection details to `infra/terraform/.env.floci`), then start the application normally — the `bootRun` Gradle task reads that file automatically.
+**Default mode (IntelliJ):** run `./scripts/dev-up.sh` once first (sets up infrastructure and writes connection details to `infra/terraform/.env.floci`), then start the application normally from IntelliJ — the `bootRun` Gradle task loads that file automatically.
+
+**MSK E2E mode (IntelliJ):** run `CREATE_MSK=true ./scripts/dev-up.sh` to provision MSK and start the app container, then attach the IntelliJ remote debugger at `localhost:5005` — see [MSK E2E mode](#msk-e2e-mode-make-dev-msk) for the full walkthrough.
 
 ## 🧪 Testing the API
 
@@ -275,15 +285,17 @@ npm run render
 
 | Action | Command |
 | :--- | :--- |
-| Start environment and run app | `make dev` |
+| Start default dev environment (Kafka as Docker container, app native) | `make dev` |
+| Start MSK E2E mode (Floci/Redpanda + app as Docker container, debug on :5005) | `make dev-msk` |
 | Provision RDS via Floci for Terraform validation (app not started) | `make dev-iac` |
-| Tear down environment | `make dev-down` |
+| Tear down environment (all modes) | `make dev-down` |
 | Start observability stack only | `docker compose up -d` |
 | Stop observability stack | `docker compose stop` |
 | Stop and remove containers | `docker compose down` |
 | Full Reset (Clean volumes) | `docker compose down -v --remove-orphans` |
 | View service logs | `docker compose logs -f` |
 | View specific service logs | `docker compose logs -f floci` |
+| View app container logs (MSK mode) | `docker logs -f reactive-order-service` |
 
 ### Application Development
 | Action | Command |
@@ -297,11 +309,12 @@ npm run render
 ### Troubleshooting
 If the application fails to connect to Kafka, Postgres, or Vault on first boot:
 1. Ensure containers are healthy: `docker compose ps`
-2. Check for port conflicts on: `4566` (Floci API), `7001` (Floci RDS proxy), `9092` (Kafka), `5432` (Postgres), `8200` (Vault), `8080` (app)
+2. Check for port conflicts on: `4566` (Floci API), `7001` (Floci RDS proxy), `9092` (Kafka — default mode), `9300-9399` (Redpanda — MSK mode), `5432` (Postgres), `8200` (Vault), `8080` (app), `5005` (JDWP — MSK mode)
 3. Verify the "Service Connection" labels in `docker-compose.yml`
 4. For Postgres/Vault PKI/mTLS issues specifically, see
    [Troubleshooting Vault & AppRole authentication](#troubleshooting-vault--approle-authentication)
    and [Verifying the mTLS flow](#verifying-the-mtls-flow)
+5. For MSK mode issues, see [MSK E2E mode troubleshooting](#troubleshooting-msk-mode)
 
 ## 🌐 Local Services & Dashboards
 
@@ -525,22 +538,123 @@ started** in this mode, because Floci's RDS emulation doesn't support TLS at all
    make dev
    ```
 
-> **MSK is not part of `make dev-iac`.** The same Floci bug that hangs `aws_msk_cluster`
-> provisioning (see "Why Docker for Kafka locally?" above) means `create_msk = true` is never set
-> by any command in this repo. Validating the `msk` module against Floci remains a manual,
-> expect-it-to-hang exercise until the upstream fix lands.
+> **MSK is not part of `make dev-iac`.** MSK E2E validation is a separate mode — use
+> `make dev-msk` (see [MSK E2E mode](#msk-e2e-mode-make-dev-msk)). `make dev-iac` is
+> intentionally RDS-only: it provisions RDS to validate the Terraform module and then stops,
+> because the app cannot connect to Floci's TLS-incapable RDS endpoint.
+
+### MSK E2E mode (`make dev-msk`)
+
+`make dev-msk` validates the MSK Terraform module end-to-end against Floci — the same
+`infra/terraform/modules/msk` used in production — with Redpanda as the Kafka backend. It requires
+Floci 1.5.28+.
+
+#### How it works
+
+When `CREATE_MSK=true`, `dev-up.sh`:
+1. Skips the plain `kafka` Docker Compose service.
+2. Applies `module.msk` via Terraform, which provisions an MSK cluster backed by Redpanda.
+3. Writes the Redpanda bootstrap address to `infra/terraform/.env.floci` as `KAFKA_BOOTSTRAP_SERVERS`.
+4. Builds the application JAR (`./gradlew bootJar`) and Docker image (`Dockerfile`).
+5. Starts the application as a Docker sibling container (`docker-compose.msk.yml` overlay), with
+   `DB_HOST=postgres` and `VAULT_ADDR=http://vault:8200` overriding the `localhost` defaults so
+   service names resolve via Docker DNS.
+
+#### Running
+
+```sh
+make dev-msk
+```
+
+On completion the script prints the Redpanda bootstrap address, app URL (`http://localhost:8080`),
+and remote debug endpoint (`localhost:5005`). To follow logs:
+
+```sh
+docker logs -f reactive-order-service
+```
+
+To tear down:
+
+```sh
+make dev-down
+```
+
+#### IntelliJ remote debug
+
+The app runs as a Docker container in this mode, but JDWP on port 5005 lets IntelliJ attach with
+the same breakpoint/step-through experience as a native process:
+
+1. **Run > Edit Configurations > + > Remote JVM Debug**
+2. **Host:** `localhost` &nbsp; **Port:** `5005`
+3. Click **Debug** — IntelliJ connects to the running container.
+
+> Hot-reload is not available in this mode; code changes require a rebuild + restart
+> (`make dev-down && make dev-msk`). Use `make dev` for day-to-day feature development.
+
+#### Verifying end-to-end
+
+1. **Health check** — confirm both `kafka` and `r2dbc` components are UP:
+
+   ```sh
+   curl -s http://localhost:8080/actuator/health | jq '{status, kafka: .components.kafka, r2dbc: .components.r2dbc}'
+   ```
+
+2. **Create and retrieve an order** — same as in default mode
+   (see [Testing the API](#-testing-the-api)):
+
+   ```sh
+   ORDER_ID=$(curl -s -X POST http://localhost:8080/orders \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json" \
+     -d '{"itemName": "ROG Ally X", "amount": 1}' | jq -r '.id') \
+   && sleep 3 \
+   && curl -s http://localhost:8080/orders/$ORDER_ID | jq
+   ```
+
+   A `PROCESSING` status confirms the order was published to Redpanda, consumed by the Kafka
+   consumer, and written back to Postgres — the full Terraform → Floci → MSK → app code path
+   exercised end-to-end.
+
+3. **Confirm MSK brokers in Terraform output:**
+
+   ```sh
+   terraform -chdir=infra/terraform output msk_bootstrap_brokers
+   ```
+
+#### Returning to default dev mode
+
+```sh
+make dev-down && make dev
+```
+
+`make dev` re-applies Terraform with `create_msk = false`, destroying the Floci MSK cluster and
+removing `KAFKA_BOOTSTRAP_SERVERS` from `.env.floci`. The app reverts to running as a native Java
+process against the plain Docker Compose Kafka on `localhost:9092`.
+
+#### Troubleshooting MSK mode
+
+| Symptom | Likely cause | Fix |
+| :--- | :--- | :--- |
+| `terraform apply` errors on `module.msk` with cluster stuck in `CREATING` | Floci image is older than 1.5.28 | Pull the pinned image: `docker compose pull floci` |
+| App container exits immediately with Kafka connection errors | `KAFKA_BOOTSTRAP_SERVERS` in `.env.floci` is empty or stale | Run `terraform -chdir=infra/terraform output msk_bootstrap_brokers` to confirm the value, then `make dev-down && make dev-msk` for a clean run |
+| IntelliJ debugger can't connect on port 5005 | App container not yet started or still initializing | Wait for `docker logs reactive-order-service` to show the Spring Boot startup banner, then retry |
+| App container cannot resolve the Redpanda hostname | App container is not in the `reactive-order-service_default` Docker network | Confirm with `docker inspect reactive-order-service \| jq '.[0].NetworkSettings.Networks'`; if missing, `make dev-down && make dev-msk` |
+| `make dev` after `make dev-msk` still uses Redpanda | `.env.floci` has a stale `KAFKA_BOOTSTRAP_SERVERS` | `make dev-down` first — it re-applies Terraform with `create_msk=false` and removes the stale key |
 
 ## Known limitations
 
-- **TLS (let alone mTLS) against Floci's RDS/MSK is impossible:** both emulators need to read the
-  Postgres/Kafka wire protocol in cleartext, so they reject TLS client hellos outright
-  (`SSLRequest` → "server does not support SSL"). This is why Postgres and Kafka run as plain
-  Docker containers locally (see "Why Docker for Postgres/Kafka locally?" above), and why
-  `make dev-iac` provisions RDS via Floci for `terraform plan`/`apply` validation only — the app is
-  not started in that mode (see
-  [Validating the RDS Terraform module](#validating-the-rds-terraform-module-make-dev-iac)). MSK
-  validation against Floci isn't wired into any command at all, since `create_msk = true` hangs
-  `terraform apply` (see "Why Docker for Kafka locally?").
+- **TLS against Floci's RDS/MSK is not supported:** Floci's emulators need to read the wire
+  protocol in cleartext and reject TLS client hellos (`SSLRequest` → "server does not support
+  SSL"). For RDS this means the app cannot connect to Floci's RDS endpoint with
+  `sslmode=require`/mTLS, which is why Postgres runs as a plain Docker container with real TLS and
+  `make dev-iac` is Terraform-only (app not started). For MSK, Floci's Redpanda runs plaintext
+  Kafka — the application connects to it without TLS, which matches the
+  `client_broker = "TLS_PLAINTEXT"` setting in `module.msk` (`infra/terraform/modules/msk/main.tf`)
+  and is sufficient for local e2e validation. Full TLS to MSK is a production concern only.
+- **MSK E2E mode requires the app as a Docker container:** because Floci runs in Docker ("container
+  mode"), Redpanda advertises its container hostname rather than `localhost`. A Mac-host Java process
+  cannot resolve it — see [Local Kafka: two modes](#local-kafka-two-modes) for the full explanation.
+  Use `make dev` for native-process development.
 - **Production RDS client-CA trust:** the `vault-pki` Terraform module and the application's Vault
   PKI client are written generically enough to target the production Vault HA cluster
   (`vault_address`/`vault_token` vars) and a real RDS Postgres instance. Whether AWS RDS for

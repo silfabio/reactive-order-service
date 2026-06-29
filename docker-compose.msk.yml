@@ -1,0 +1,31 @@
+services:
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reactive-order-service
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    env_file:
+      - path: .env
+        required: true
+      - path: infra/terraform/.env.floci
+        required: false
+    environment:
+      # Replace localhost refs with Docker service names for sibling-container networking.
+      # KAFKA_BOOTSTRAP_SERVERS comes from .env.floci and already contains the Redpanda
+      # container name (advertised by Floci in container mode) — no override needed.
+      DB_HOST: postgres
+      VAULT_ADDR: http://vault:8200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
