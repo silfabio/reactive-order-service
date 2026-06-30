@@ -24,8 +24,29 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=mailhog:1025
+      - GF_SMTP_FROM_ADDRESS=grafana@reactive-order-service.local
+      - GF_SMTP_FROM_NAME=Reactive Order Service Alerts
+      - GF_SMTP_SKIP_VERIFY=true
     depends_on:
       - prometheus
+      - mailhog
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: reactive-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    labels:
+      org.springframework.boot.readiness-check.tcp.disable: "true"
 
   sonarqube:
     image: sonarqube:community

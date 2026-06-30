@@ -57,3 +57,9 @@ vault_node_count    = 3
 create_vault_pki = true
 vault_address    = "http://localhost:8200"
 vault_token      = "root"
+
+# Grafana — dashboard + alert rules provisioned via Terraform (grafana/grafana provider)
+# grafana_password and alert_email are NOT stored here — injected from .env as
+# TF_VAR_grafana_password and TF_VAR_alert_email by dev-up.sh
+create_grafana = true
+grafana_url    = "http://localhost:3000"

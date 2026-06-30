@@ -250,3 +250,29 @@ variable "postgres_server_ip_sans" {
   type        = list(string)
   default     = ["127.0.0.1"]
 }
+
+# ── Grafana ──────────────────────────────────────────────────────────────────
+
+variable "grafana_url" {
+  description = "Grafana URL for the Terraform provider. Local: Docker Compose container at http://localhost:3000."
+  type        = string
+  default     = "http://localhost:3000"
+}
+
+variable "grafana_password" {
+  description = "Grafana admin password. Injected from GRAFANA_ADMIN_PASSWORD in .env via TF_VAR_grafana_password by dev-up.sh."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "alert_email" {
+  description = "Email address for Grafana alert notifications. Set ALERT_EMAIL in .env — injected as TF_VAR_alert_email by dev-up.sh."
+  type        = string
+}
+
+variable "create_grafana" {
+  description = "Provision Grafana datasource, dashboard, and alert rules via the Grafana API. Requires Grafana to be running."
+  type        = bool
+  default     = true
+}

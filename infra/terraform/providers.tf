@@ -35,3 +35,8 @@ provider "vault" {
   address = var.vault_address
   token   = var.vault_token
 }
+
+provider "grafana" {
+  url  = var.grafana_url
+  auth = "admin:${var.grafana_password}"
+}

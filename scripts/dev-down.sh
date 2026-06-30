@@ -8,6 +8,8 @@ echo "==> Destroying Terraform-provisioned infrastructure..."
 source "$ROOT_DIR/.env"
 export TF_VAR_db_username="$DB_USER"
 export TF_VAR_db_password="$DB_PASSWORD"
+export TF_VAR_grafana_password="${GRAFANA_ADMIN_PASSWORD:-}"
+export TF_VAR_alert_email="${ALERT_EMAIL:-placeholder@example.com}"
 terraform -chdir="$ROOT_DIR/infra/terraform" destroy \
 	-var-file=terraform.local.tfvars \
 	-auto-approve
