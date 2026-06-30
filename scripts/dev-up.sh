@@ -65,6 +65,13 @@ until curl -sf "http://localhost:8200/v1/sys/health?standbyok=true" >/dev/null 2
 done
 echo " ready"
 
+printf "==> Waiting for Grafana"
+until curl -sf http://localhost:3000/api/health >/dev/null 2>&1; do
+	printf "."
+	sleep 2
+done
+echo " ready"
+
 # ── Terraform init — only on first run or when .terraform/ is missing ────────
 if [ ! -d "$TF_DIR/.terraform" ]; then
 	echo "==> Running terraform init..."
@@ -76,6 +83,8 @@ fi
 source "$ROOT_DIR/.env"
 export TF_VAR_db_username="$DB_USER"
 export TF_VAR_db_password="$DB_PASSWORD"
+export TF_VAR_grafana_password="$GRAFANA_ADMIN_PASSWORD"
+export TF_VAR_alert_email="$ALERT_EMAIL"
 
 # ── Provision Vault PKI first — generates the two-tier CA and the Postgres
 # server cert into ./.certs, which docker-compose's postgres service mounts.

@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.5"
     }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 3.0"
+    }
   }
 
   # Local state for development. Switch to S3 for production:

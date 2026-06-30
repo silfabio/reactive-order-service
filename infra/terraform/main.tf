@@ -92,3 +92,11 @@ module "vault_pki" {
 
   certs_output_dir = abspath("${path.root}/../../.certs")
 }
+
+module "grafana" {
+  count  = var.create_grafana ? 1 : 0
+  source = "./modules/grafana"
+
+  prometheus_url = "http://prometheus:9090"
+  alert_email    = var.alert_email
+}

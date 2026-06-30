@@ -137,7 +137,24 @@ full walkthrough, including why the app isn't started in that mode.
 - **Terraform >= 1.10.0** ([install](https://developer.hashicorp.com/terraform/install))
 - **Node.js & npm** (For running local scripts)
 
-### 2. Start Infrastructure and Run
+### 2. Configure `.env`
+
+Copy the example file and fill in your values:
+
+```sh
+cp .env.example .env
+```
+
+Open `.env` and set `ALERT_EMAIL` to the address that should receive Grafana alerts:
+
+```sh
+ALERT_EMAIL=you@example.com
+```
+
+> `ALERT_EMAIL` is read by `dev-up.sh` and passed to Terraform as `TF_VAR_alert_email` to
+> provision the Grafana contact point. It is never committed to source control.
+
+### 3. Start Infrastructure and Run
 
 **Default mode** — Kafka as a Docker container, app as a native Java process:
 
@@ -159,7 +176,7 @@ make dev-down
 
 > See [scripts/dev-up.sh](scripts/dev-up.sh) for what the setup script does step by step, and [infra/terraform/README.md](infra/terraform/README.md) for the full Terraform reference.
 
-### 3. Run the Application
+### 4. Run the Application
 **Default mode (IntelliJ):** run `./scripts/dev-up.sh` once first (sets up infrastructure and writes connection details to `infra/terraform/.env.floci`), then start the application normally from IntelliJ — the `bootRun` Gradle task loads that file automatically.
 
 **MSK end-to-end mode (IntelliJ):** run `CREATE_MSK=true ./scripts/dev-up.sh` to provision MSK and start the app container, then attach the IntelliJ remote debugger at `localhost:5005` — see [MSK end-to-end mode](#msk-end-to-end-mode-make-dev-msk) for the full walkthrough.
@@ -328,7 +345,8 @@ Once the infrastructure is up and the application is running, you can access the
 - **Spring Boot Actuator:** <http://localhost:8080/actuator>
 - **Prometheus:** <http://localhost:9090>
 - **Prometheus Targets:** <http://localhost:9090/targets>
-- **Grafana:** <http://localhost:3000> (Login details are in `.env.example`)
+- **Grafana:** <http://localhost:3000> (login: `admin` / `GRAFANA_ADMIN_PASSWORD` from `.env`)
+- **MailHog (alert email capture):** <http://localhost:8025> (catches all Grafana alert emails locally — no real SMTP needed)
 - **Zipkin Tracing:** <http://localhost:9411>
 - **SonarQube (Local):** <http://localhost:9000>
 - **Floci (AWS emulator):** <http://localhost:4566>
