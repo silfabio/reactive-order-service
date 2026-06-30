@@ -22,7 +22,7 @@ resource "grafana_folder" "order_service" {
 }
 
 resource "grafana_dashboard" "order_service" {
-  folder      = grafana_folder.order_service.uid
+  folder = grafana_folder.order_service.uid
   config_json = templatefile("${path.module}/../../../grafana/dashboards/order-service.json.tpl", {
     datasource_uid = grafana_data_source.prometheus.uid
   })
@@ -51,9 +51,9 @@ resource "grafana_rule_group" "order_service" {
   interval_seconds = 30
 
   rule {
-    name      = "High Order Creation Latency"
-    condition = "C"
-    for       = "5m"
+    name           = "High Order Creation Latency"
+    condition      = "C"
+    for            = "5m"
     no_data_state  = "NoData"
     exec_err_state = "Error"
     annotations = {
@@ -104,9 +104,9 @@ resource "grafana_rule_group" "order_service" {
   }
 
   rule {
-    name      = "High HTTP Error Rate"
-    condition = "C"
-    for       = "5m"
+    name           = "High HTTP Error Rate"
+    condition      = "C"
+    for            = "5m"
     no_data_state  = "NoData"
     exec_err_state = "Error"
     annotations = {
@@ -157,9 +157,9 @@ resource "grafana_rule_group" "order_service" {
   }
 
   rule {
-    name      = "App Instance Down"
-    condition = "C"
-    for       = "0s"
+    name           = "App Instance Down"
+    condition      = "C"
+    for            = "0s"
     no_data_state  = "Alerting"
     exec_err_state = "Alerting"
     annotations = {
@@ -214,9 +214,9 @@ resource "grafana_rule_group" "order_service" {
   }
 
   rule {
-    name      = "High JVM Heap Usage"
-    condition = "C"
-    for       = "10m"
+    name           = "High JVM Heap Usage"
+    condition      = "C"
+    for            = "10m"
     no_data_state  = "NoData"
     exec_err_state = "Error"
     annotations = {
@@ -267,9 +267,9 @@ resource "grafana_rule_group" "order_service" {
   }
 
   rule {
-    name      = "Excessive Resilience4j Retries"
-    condition = "C"
-    for       = "5m"
+    name           = "Excessive Resilience4j Retries"
+    condition      = "C"
+    for            = "5m"
     no_data_state  = "NoData"
     exec_err_state = "Error"
     annotations = {
